@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import {
   createProductType,
   getAllProductTypes,
+  updateProductType,
 } from "../../models/product-types.models";
 import {
   BAD_REQUEST_CODE,
@@ -9,6 +10,7 @@ import {
   CREATED_CODE,
   INTERNAL_SERVER_ERROR_CODE,
 } from "../../common/request-codes";
+import { EDatabaseResponses } from "../../data/data";
 
 export const productTypeRouter = Router();
 
@@ -56,7 +58,7 @@ productTypeRouter.get("/", async (_, res) => {
  *     summary: Create a new product type
  *     description: Create a new unique product type with a supplied product type name
  *     parameters:
- *       - in: path
+ *       - in: body
  *         name: product-type-name
  *         required: true
  *         description: The unique product type name
@@ -90,5 +92,68 @@ productTypeRouter.post("/", async (req, res) => {
     }
   } else {
     res.status(BAD_REQUEST_CODE).send("Product type name missing");
+  }
+});
+
+/**
+ * @swagger
+ * /v1/product-types/{id}:
+ *   put:
+ *     summary: Update a new product type
+ *     description: Update an existing product type name using the product type id
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product type to update
+ *         schema:
+ *           type: integer
+ *       - in: body
+ *         name: product-type-name
+ *         required: true
+ *         description: The new uniue product type name
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *          description: Product type update
+ *       409:
+ *          description: New product type name already exists
+ *       400:
+ *          description: Product type Id doesn't exist, was missing from the request or was invalid
+ *       500:
+ *          description: Internal server error
+ */
+productTypeRouter.put("/:id", async (req, res) => {
+  const newSuppliedProductTypeName = req.body["product-type-name"];
+  const { id } = req.query;
+  if (typeof newSuppliedProductTypeName === "string" && !Number.isNaN(id)) {
+    const trimmedProductTypeName = newSuppliedProductTypeName.trim();
+    const productTypeId = Number(id);
+    try {
+      const updated = await updateProductType(
+        productTypeId,
+        trimmedProductTypeName
+      );
+      switch (updated) {
+        case EDatabaseResponses.OK:
+          res.send("Product type updated");
+
+        case EDatabaseResponses.CONFLICT:
+          res.status(CONFLICT_CODE).send("Product type name already exists");
+
+        case EDatabaseResponses.UPDATE_DOES_NOT_EXIST:
+          res.status(BAD_REQUEST_CODE).send("Product type id does not exist");
+
+        default:
+          res.sendStatus(INTERNAL_SERVER_ERROR_CODE);
+      }
+    } catch (e) {
+      res.status(INTERNAL_SERVER_ERROR_CODE).send("Internal error");
+    }
+  } else if (newSuppliedProductTypeName === undefined) {
+    res.status(BAD_REQUEST_CODE).send("Product type name missing");
+  } else {
+    res.status(BAD_REQUEST_CODE).send("Invalid product type id");
   }
 });

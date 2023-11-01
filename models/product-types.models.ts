@@ -1,5 +1,5 @@
 import { UNIQUE_CONSTRAINT_FAILED } from "../common/postgresql-error-codes";
-import pool, { ICustomError } from "../data/data";
+import pool, { EDatabaseResponses, ICustomError } from "../data/data";
 
 type TProductTypeEntry = {
   id: number;
@@ -46,6 +46,41 @@ export const createProductType = (
           }
         } else {
           resolve(res.rowCount > 0);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Update a product type
+ * @param productTypeId The Id of the product type to update
+ * @param newProductTypeName The new name for the product type
+ * @returns EDatabaseResponses.OK if the product type is updated, EDatabaseResponses.UPDATE_DOES_NOT_EXIST if
+ * the product type doesn't exist or already exists. EDatabaseResponses.CONFLICT if the new product type
+ * name already exists. Rejects on database error
+ */
+export const updateProductType = (
+  productTypeId: number,
+  newProductTypeName: string
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "UPDATE product_types SET type = $1 WHERE id = $2",
+      [newProductTypeName, productTypeId],
+      (err: ICustomError, res) => {
+        if (err) {
+          if (err.code === UNIQUE_CONSTRAINT_FAILED) {
+            resolve(EDatabaseResponses.CONFLICT);
+          } else {
+            reject(err.message);
+          }
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.UPDATE_DOES_NOT_EXIST
+          );
         }
       }
     );
