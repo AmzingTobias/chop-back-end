@@ -1,0 +1,1 @@
+export const UNIQUE_CONSTRAINT_FAILED = "23505";
