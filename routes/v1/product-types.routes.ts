@@ -44,8 +44,7 @@ productTypeRouter.get("/", async (_, res) => {
   try {
     const result = await getAllProductTypes();
     res.json(result);
-  } catch (e) {
-    console.error(e);
+  } catch (_) {
     res
       .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
       .send(ETextResponse.INTERNAL_ERROR);
@@ -91,8 +90,7 @@ productTypeRouter.post("/", async (req, res) => {
           .status(EResponseStatusCodes.CONFLICT_CODE)
           .send(ETextResponse.PRODUCT_TYPE_ALREADY_EXISTS);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       res
         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
         .send(ETextResponse.INTERNAL_ERROR);
@@ -165,8 +163,7 @@ productTypeRouter.put("/:id", async (req, res) => {
           res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
           break;
       }
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       res
         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
         .send(ETextResponse.INTERNAL_ERROR);
@@ -221,8 +218,7 @@ productTypeRouter.delete("/:id", async (req, res) => {
           res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
           break;
       }
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       res
         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
         .send(ETextResponse.INTERNAL_ERROR);

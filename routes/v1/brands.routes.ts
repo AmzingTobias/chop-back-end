@@ -42,8 +42,7 @@ brandRouter.get("/", async (_, res) => {
   try {
     const brands = await getAllBrands();
     res.json(brands);
-  } catch (e) {
-    console.error(e);
+  } catch (_) {
     res
       .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
       .send(ETextResponse.INTERNAL_ERROR);
@@ -93,8 +92,7 @@ brandRouter.post("/", async (req, res) => {
         default:
           res.status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       res
         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
         .send(ETextResponse.INTERNAL_ERROR);

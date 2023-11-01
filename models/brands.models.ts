@@ -14,7 +14,8 @@ export const getAllBrands = (): Promise<TBrandEntry[]> => {
   return new Promise((resolve, reject) => {
     pool.query("SELECT id, name FROM brands", (err: ICustomError, res) => {
       if (err) {
-        reject(`${err.code}: ${err.message}`);
+        console.error(`${err.code}: ${err.message}`);
+        reject(err);
       } else {
         resolve(res.rows as TBrandEntry[]);
       }
@@ -36,12 +37,13 @@ export const createNewBrand = (
     pool.query(
       "INSERT INTO brands(name) VALUES($1)",
       [brandName],
-      (err: ICustomError, res) => {
+      (err: ICustomError, _) => {
         if (err) {
           if (err.code === UNIQUE_CONSTRAINT_FAILED) {
             resolve(EDatabaseResponses.CONFLICT);
           } else {
-            reject(`${err.code}: ${err.message}`);
+            console.error(`${err.code}: ${err.message}`);
+            reject(err);
           }
         } else {
           resolve(EDatabaseResponses.OK);
