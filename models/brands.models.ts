@@ -52,3 +52,40 @@ export const createNewBrand = (
     );
   });
 };
+
+/**
+ * Update a brand's name
+ * @param brandId The id of the brand to update
+ * @param newBrandName The new name for the brand
+ * @returns EDatabaseResponses.OK if the brand name is updated,
+ * EDatabaseResponses.CONFLIC if the brand name is already in use,
+ * EDatabaseResponses.DOES_NOT_EXIST if the brand Id is not valid.
+ * Rejects on database errors
+ */
+export const updateBrand = (
+  brandId: number,
+  newBrandName: string
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "UPDATE Brands SET name = $1 WHERE id = $2",
+      [newBrandName, brandId],
+      (err: ICustomError, res) => {
+        if (err) {
+          if (err.code === UNIQUE_CONSTRAINT_FAILED) {
+            resolve(EDatabaseResponses.CONFLICT);
+          } else {
+            console.error(`${err.code}: ${err.message}`);
+            reject(err);
+          }
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};

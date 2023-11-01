@@ -15,7 +15,7 @@ export const productTypeRouter = Router();
 
 /**
  * @swagger
- * /v1/product-types:
+ * /v1/product-types/:
  *   get:
  *     summary: Retrieve a lsit of product types
  *     description: Retrieve a list of product types.
@@ -53,7 +53,7 @@ productTypeRouter.get("/", async (_, res) => {
 
 /**
  * @swagger
- * /v1/product-types:
+ * /v1/product-types/:
  *   post:
  *     summary: Create a new product type
  *     description: Create a new unique product type with a supplied product type name
