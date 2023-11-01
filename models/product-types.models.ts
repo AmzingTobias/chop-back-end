@@ -15,10 +15,11 @@ export const getAllProductTypes = (): Promise<TProductTypeEntry[]> => {
     pool.query(
       "SELECT id, type FROM product_types",
       (err: ICustomError, res) => {
-        if (!err) {
-          resolve(res.rows as TProductTypeEntry[]);
+        if (err) {
+          console.error(`${err.code}: ${err.message}`);
+          reject(err);
         } else {
-          reject(`${err.code}: ${err.message}`);
+          resolve(res.rows as TProductTypeEntry[]);
         }
       }
     );
@@ -42,7 +43,8 @@ export const createProductType = (
           if (err.code === UNIQUE_CONSTRAINT_FAILED) {
             resolve(false);
           } else {
-            reject(`${err.code}: ${err.message}`);
+            console.error(`${err.code}: ${err.message}`);
+            reject(err);
           }
         } else {
           resolve(res.rowCount > 0);
@@ -73,7 +75,8 @@ export const updateProductType = (
           if (err.code === UNIQUE_CONSTRAINT_FAILED) {
             resolve(EDatabaseResponses.CONFLICT);
           } else {
-            reject(`${err.code}: ${err.message}`);
+            console.error(`${err.code}: ${err.message}`);
+            reject(err);
           }
         } else {
           resolve(
@@ -103,7 +106,8 @@ export const deleteProductType = (
       [productTypeId],
       (err: ICustomError, res) => {
         if (err) {
-          reject(`${err.code}: ${err.message}`);
+          console.error(`${err.code}: ${err.message}`);
+          reject(err);
         } else {
           resolve(
             res.rowCount > 0

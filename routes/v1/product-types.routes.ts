@@ -1,24 +1,23 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import {
   createProductType,
   deleteProductType,
   getAllProductTypes,
   updateProductType,
 } from "../../models/product-types.models";
-import {
-  BAD_REQUEST_CODE,
-  CONFLICT_CODE,
-  CREATED_CODE,
-  INTERNAL_SERVER_ERROR_CODE,
-} from "../../common/request-codes";
 import { EDatabaseResponses } from "../../data/data";
+import {
+  ETextResponse,
+  EResponseStatusCodes,
+} from "../../common/response-types";
 
 export const productTypeRouter = Router();
 
 /**
  * @swagger
- * /v1/product-types:
+ * /product-types:
  *   get:
+ *     tags: [Product types]
  *     summary: Retrieve a lsit of product types
  *     description: Retrieve a list of product types.
  *     responses:
@@ -46,16 +45,18 @@ productTypeRouter.get("/", async (_, res) => {
   try {
     const result = await getAllProductTypes();
     res.json(result);
-  } catch (e) {
-    console.error(e);
-    res.status(INTERNAL_SERVER_ERROR_CODE).send("Internal error");
+  } catch (_) {
+    res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
   }
 });
 
 /**
  * @swagger
- * /v1/product-types:
+ * /product-types:
  *   post:
+ *     tags: [Product types]
  *     summary: Create a new product type
  *     description: Create a new unique product type with a supplied product type name
  *     parameters:
@@ -83,23 +84,31 @@ productTypeRouter.post("/", async (req, res) => {
     try {
       const created = await createProductType(cleanedProductTypeName);
       if (created) {
-        res.status(CREATED_CODE).send("Product type created");
+        res
+          .status(EResponseStatusCodes.CREATED_CODE)
+          .send(ETextResponse.PRODUCT_TYPE_CREATED);
       } else {
-        res.status(CONFLICT_CODE).send("Product type already exists");
+        res
+          .status(EResponseStatusCodes.CONFLICT_CODE)
+          .send(ETextResponse.PRODUCT_TYPE_ALREADY_EXISTS);
       }
-    } catch (e) {
-      console.error(e);
-      res.status(INTERNAL_SERVER_ERROR_CODE).send("Internal error");
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
     }
   } else {
-    res.status(BAD_REQUEST_CODE).send("Product type name missing");
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   }
 });
 
 /**
  * @swagger
- * /v1/product-types/{id}:
+ * /product-types/{id}:
  *   put:
+ *     tags: [Product types]
  *     summary: Update a product type
  *     description: Update an existing product type name using the product type id
  *     parameters:
@@ -141,33 +150,43 @@ productTypeRouter.put("/:id", async (req, res) => {
       );
       switch (updated) {
         case EDatabaseResponses.OK:
-          res.send("Product type updated");
+          res.send(ETextResponse.PRODUCT_TYPE_UPDATED);
           break;
         case EDatabaseResponses.CONFLICT:
-          res.status(CONFLICT_CODE).send("Product type name already exists");
+          res
+            .status(EResponseStatusCodes.CONFLICT_CODE)
+            .send(ETextResponse.PRODUCT_TYPE_ALREADY_EXISTS);
           break;
         case EDatabaseResponses.DOES_NOT_EXIST:
-          res.status(BAD_REQUEST_CODE).send("Product type id does not exist");
+          res
+            .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+            .send(ETextResponse.PRODUCT_TYPE_ID_NOT_EXIST);
           break;
         default:
-          res.sendStatus(INTERNAL_SERVER_ERROR_CODE);
+          res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
           break;
       }
-    } catch (e) {
-      console.error(e);
-      res.status(INTERNAL_SERVER_ERROR_CODE).send("Internal error");
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
     }
   } else if (newSuppliedProductTypeName === undefined) {
-    res.status(BAD_REQUEST_CODE).send("Product type name missing");
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   } else {
-    res.status(BAD_REQUEST_CODE).send("Invalid product type id");
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
   }
 });
 
 /**
  * @swagger
- * /v1/product-types/{id}:
+ * /product-types/{id}:
  *   delete:
+ *     tags: [Product types]
  *     summary: Delete a product type
  *     description: Delete a product type using its id
  *     parameters:
@@ -192,20 +211,25 @@ productTypeRouter.delete("/:id", async (req, res) => {
       const deleted = await deleteProductType(Number(id));
       switch (deleted) {
         case EDatabaseResponses.OK:
-          res.send("Product type removed");
+          res.send(ETextResponse.PRODUCT_TYPE_DELETED);
           break;
         case EDatabaseResponses.DOES_NOT_EXIST:
-          res.status(BAD_REQUEST_CODE).send("Product type does not exist");
+          res
+            .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+            .send(ETextResponse.PRODUCT_TYPE_ID_NOT_EXIST);
           break;
         default:
-          res.sendStatus(INTERNAL_SERVER_ERROR_CODE);
+          res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
           break;
       }
-    } catch (e) {
-      console.error(e);
-      res.status(INTERNAL_SERVER_ERROR_CODE).send("Internal error");
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
     }
   } else {
-    res.status(BAD_REQUEST_CODE).send("Invalid product type id");
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
   }
 });

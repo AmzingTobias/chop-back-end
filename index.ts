@@ -4,15 +4,17 @@ import { productTypeRouter } from "./routes/v1/product-types.routes";
 
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import { brandRouter } from "./routes/v1/brands.routes";
 
 // Swagger Docs
 const swaggerSpecv1 = swaggerJSDoc({
   swaggerDefinition: {
     info: {
-      title: "V1 API documentation for chop",
+      title: "API documentation for chop",
       version: "1.0.0",
     },
-    openapi: "3.0.0",
+    swagger: "2.0",
+    basePath: "/v1",
   },
   apis: ["./routes/v1/*.routes.ts"],
 });
@@ -24,13 +26,14 @@ app.use(express.json());
 
 // Routes
 app.use("/v1/product-types", productTypeRouter);
+app.use("/v1/brands", brandRouter);
 
 // Docs
 app.use(
   "/v1/docs",
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpecv1, {
-    customSiteTitle: "V1 Documentation",
+    customSiteTitle: "v1 Documentation",
     swaggerOptions: {
       supportedSubmitMethods: ["get"],
       layout: "BaseLayout",
