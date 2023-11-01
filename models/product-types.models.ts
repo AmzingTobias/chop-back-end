@@ -2,6 +2,7 @@ import { UNIQUE_CONSTRAINT_FAILED } from "../common/postgresql-error-codes";
 import pool, { ICustomError } from "../data/data";
 
 type TProductTypeEntry = {
+  id: number;
   type: string;
 };
 
@@ -11,13 +12,16 @@ type TProductTypeEntry = {
  */
 export const getAllProductTypes = (): Promise<TProductTypeEntry[]> => {
   return new Promise((resolve, reject) => {
-    pool.query("SELECT type FROM product_types", (err: ICustomError, res) => {
-      if (!err) {
-        resolve(res.rows as TProductTypeEntry[]);
-      } else {
-        reject(`${err.code}: ${err.message}`);
+    pool.query(
+      "SELECT id, type FROM product_types",
+      (err: ICustomError, res) => {
+        if (!err) {
+          resolve(res.rows as TProductTypeEntry[]);
+        } else {
+          reject(`${err.code}: ${err.message}`);
+        }
       }
-    });
+    );
   });
 };
 

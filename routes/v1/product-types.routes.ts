@@ -28,6 +28,10 @@ export const productTypeRouter = Router();
  *               items:
  *                 type: object
  *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     description: The id of the product type.
+ *                     example: 1
  *                   type:
  *                     type: string
  *                     description: The name of the product type.
