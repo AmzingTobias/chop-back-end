@@ -10,6 +10,22 @@ export const productTypeRouter = Router();
  *   get:
  *     summary: Retrieve a lsit of product types
  *     description: Retrieve a list of product types.
+ *     responses:
+ *       200:
+ *         description: A list of product types.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     description: The name of the product type.
+ *                     example: Technology
+ *       500:
+ *          description: Internal server error
  */
 productTypeRouter.get("/", async (_, res) => {
   try {
