@@ -1,4 +1,11 @@
-export enum ERequestTextResponses {
+export enum EResponseStatusCodes {
+  INTERNAL_SERVER_ERROR_CODE = 500,
+  BAD_REQUEST_CODE = 400,
+  CREATED_CODE = 201,
+  CONFLICT_CODE = 409,
+}
+
+export enum ETextResponse {
   INTERNAL_ERROR = "Internal error",
   PRODUCT_TYPE_ALREADY_EXISTS = "Product type name already exists",
   PRODUCT_TYPE_ID_NOT_EXIST = "Product type does not exist",

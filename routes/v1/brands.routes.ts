@@ -3,8 +3,10 @@ import {
   createNewBrand as createBrand,
   getAllBrands,
 } from "../../models/brands.models";
-import { ERequestCodes } from "../../common/request-codes";
-import { ERequestTextResponses } from "../../common/request-text-response";
+import {
+  ETextResponse,
+  EResponseStatusCodes,
+} from "../../common/response-types";
 import { EDatabaseResponses } from "../../data/data";
 
 export const brandRouter = Router();
@@ -43,8 +45,8 @@ brandRouter.get("/", async (_, res) => {
   } catch (e) {
     console.error(e);
     res
-      .status(ERequestCodes.INTERNAL_SERVER_ERROR_CODE)
-      .send(ERequestTextResponses.INTERNAL_ERROR);
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
   }
 });
 
@@ -80,26 +82,26 @@ brandRouter.post("/", async (req, res) => {
       switch (created) {
         case EDatabaseResponses.OK:
           res
-            .status(ERequestCodes.CREATED_CODE)
-            .send(ERequestTextResponses.BRAND_CREATED);
+            .status(EResponseStatusCodes.CREATED_CODE)
+            .send(ETextResponse.BRAND_CREATED);
           break;
         case EDatabaseResponses.CONFLICT:
           res
-            .status(ERequestCodes.CONFLICT_CODE)
-            .send(ERequestTextResponses.BRAND_ALREADY_EXISTS);
+            .status(EResponseStatusCodes.CONFLICT_CODE)
+            .send(ETextResponse.BRAND_ALREADY_EXISTS);
           break;
         default:
-          res.status(ERequestCodes.INTERNAL_SERVER_ERROR_CODE);
+          res.status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
       }
     } catch (e) {
       console.error(e);
       res
-        .status(ERequestCodes.INTERNAL_SERVER_ERROR_CODE)
-        .send(ERequestTextResponses.INTERNAL_ERROR);
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
     }
   } else {
     res
-      .status(ERequestCodes.BAD_REQUEST_CODE)
-      .send(ERequestTextResponses.MISSING_FIELD_IN_REQ_BODY);
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   }
 });

@@ -5,9 +5,11 @@ import {
   getAllProductTypes,
   updateProductType,
 } from "../../models/product-types.models";
-import { ERequestCodes } from "../../common/request-codes";
 import { EDatabaseResponses } from "../../data/data";
-import { ERequestTextResponses } from "../../common/request-text-response";
+import {
+  ETextResponse,
+  EResponseStatusCodes,
+} from "../../common/response-types";
 
 export const productTypeRouter = Router();
 
@@ -45,8 +47,8 @@ productTypeRouter.get("/", async (_, res) => {
   } catch (e) {
     console.error(e);
     res
-      .status(ERequestCodes.INTERNAL_SERVER_ERROR_CODE)
-      .send(ERequestTextResponses.INTERNAL_ERROR);
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
   }
 });
 
@@ -82,23 +84,23 @@ productTypeRouter.post("/", async (req, res) => {
       const created = await createProductType(cleanedProductTypeName);
       if (created) {
         res
-          .status(ERequestCodes.CREATED_CODE)
-          .send(ERequestTextResponses.PRODUCT_TYPE_CREATED);
+          .status(EResponseStatusCodes.CREATED_CODE)
+          .send(ETextResponse.PRODUCT_TYPE_CREATED);
       } else {
         res
-          .status(ERequestCodes.CONFLICT_CODE)
-          .send(ERequestTextResponses.PRODUCT_TYPE_ALREADY_EXISTS);
+          .status(EResponseStatusCodes.CONFLICT_CODE)
+          .send(ETextResponse.PRODUCT_TYPE_ALREADY_EXISTS);
       }
     } catch (e) {
       console.error(e);
       res
-        .status(ERequestCodes.INTERNAL_SERVER_ERROR_CODE)
-        .send(ERequestTextResponses.INTERNAL_ERROR);
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
     }
   } else {
     res
-      .status(ERequestCodes.BAD_REQUEST_CODE)
-      .send(ERequestTextResponses.MISSING_FIELD_IN_REQ_BODY);
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   }
 });
 
@@ -147,36 +149,36 @@ productTypeRouter.put("/:id", async (req, res) => {
       );
       switch (updated) {
         case EDatabaseResponses.OK:
-          res.send(ERequestTextResponses.PRODUCT_TYPE_UPDATED);
+          res.send(ETextResponse.PRODUCT_TYPE_UPDATED);
           break;
         case EDatabaseResponses.CONFLICT:
           res
-            .status(ERequestCodes.CONFLICT_CODE)
-            .send(ERequestTextResponses.PRODUCT_TYPE_ALREADY_EXISTS);
+            .status(EResponseStatusCodes.CONFLICT_CODE)
+            .send(ETextResponse.PRODUCT_TYPE_ALREADY_EXISTS);
           break;
         case EDatabaseResponses.DOES_NOT_EXIST:
           res
-            .status(ERequestCodes.BAD_REQUEST_CODE)
-            .send(ERequestTextResponses.PRODUCT_TYPE_ID_NOT_EXIST);
+            .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+            .send(ETextResponse.PRODUCT_TYPE_ID_NOT_EXIST);
           break;
         default:
-          res.sendStatus(ERequestCodes.INTERNAL_SERVER_ERROR_CODE);
+          res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
           break;
       }
     } catch (e) {
       console.error(e);
       res
-        .status(ERequestCodes.INTERNAL_SERVER_ERROR_CODE)
-        .send(ERequestTextResponses.INTERNAL_ERROR);
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
     }
   } else if (newSuppliedProductTypeName === undefined) {
     res
-      .status(ERequestCodes.BAD_REQUEST_CODE)
-      .send(ERequestTextResponses.MISSING_FIELD_IN_REQ_BODY);
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   } else {
     res
-      .status(ERequestCodes.BAD_REQUEST_CODE)
-      .send(ERequestTextResponses.ID_INVALID_IN_REQ);
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
   }
 });
 
@@ -208,26 +210,26 @@ productTypeRouter.delete("/:id", async (req, res) => {
       const deleted = await deleteProductType(Number(id));
       switch (deleted) {
         case EDatabaseResponses.OK:
-          res.send(ERequestTextResponses.PRODUCT_TYPE_DELETED);
+          res.send(ETextResponse.PRODUCT_TYPE_DELETED);
           break;
         case EDatabaseResponses.DOES_NOT_EXIST:
           res
-            .status(ERequestCodes.BAD_REQUEST_CODE)
-            .send(ERequestTextResponses.PRODUCT_TYPE_ID_NOT_EXIST);
+            .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+            .send(ETextResponse.PRODUCT_TYPE_ID_NOT_EXIST);
           break;
         default:
-          res.sendStatus(ERequestCodes.INTERNAL_SERVER_ERROR_CODE);
+          res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
           break;
       }
     } catch (e) {
       console.error(e);
       res
-        .status(ERequestCodes.INTERNAL_SERVER_ERROR_CODE)
-        .send(ERequestTextResponses.INTERNAL_ERROR);
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
     }
   } else {
     res
-      .status(ERequestCodes.BAD_REQUEST_CODE)
-      .send(ERequestTextResponses.ID_INVALID_IN_REQ);
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
   }
 });

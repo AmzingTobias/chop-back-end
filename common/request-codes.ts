@@ -1,6 +1,0 @@
-export enum ERequestCodes {
-  INTERNAL_SERVER_ERROR_CODE = 500,
-  BAD_REQUEST_CODE = 400,
-  CREATED_CODE = 201,
-  CONFLICT_CODE = 409,
-}
