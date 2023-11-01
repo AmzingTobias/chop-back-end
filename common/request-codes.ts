@@ -1,4 +1,6 @@
-export const INTERNAL_SERVER_ERROR_CODE = 500;
-export const BAD_REQUEST_CODE = 400;
-export const CREATED_CODE = 201;
-export const CONFLICT_CODE = 409;
+export enum ERequestCodes {
+  INTERNAL_SERVER_ERROR_CODE = 500,
+  BAD_REQUEST_CODE = 400,
+  CREATED_CODE = 201,
+  CONFLICT_CODE = 409,
+}
