@@ -20,4 +20,5 @@ export enum ETextResponse {
   BRAND_ID_NOT_EXIST = "Brand does not exist",
   BRAND_CREATED = "Brand created",
   BRAND_UPDATED = "Brand updated",
+  BRAND_DELETED = "Brand deleted",
 }

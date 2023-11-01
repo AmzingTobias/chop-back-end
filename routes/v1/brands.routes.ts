@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createNewBrand as createBrand,
+  deleteBrand,
   getAllBrands,
   updateBrand,
 } from "../../models/brands.models";
@@ -168,6 +169,57 @@ brandRouter.put("/:id", async (req, res) => {
     res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  } else {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+});
+
+/**
+ * @swagger
+ * /v1/brands/{id}:
+ *   delete:
+ *     summary: Delete a brand
+ *     description: Delete a brand using its id
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the brand to delete
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *          description: Brand deleted
+ *       400:
+ *          description: Brand Id was invalid
+ *       500:
+ *          description: Internal server error
+ */
+brandRouter.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+  if (!Number.isNaN(Number(id))) {
+    try {
+      const deleted = await deleteBrand(Number(id));
+      switch (deleted) {
+        case EDatabaseResponses.OK:
+          res.send(ETextResponse.BRAND_DELETED);
+          break;
+        case EDatabaseResponses.DOES_NOT_EXIST:
+          res
+            .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+            .send(ETextResponse.BRAND_ID_NOT_EXIST);
+          break;
+        default:
+          res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+          break;
+      }
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    }
   } else {
     res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)

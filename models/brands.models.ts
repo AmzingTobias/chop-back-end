@@ -89,3 +89,31 @@ export const updateBrand = (
     );
   });
 };
+
+/**
+ * Delete a brand using an Id
+ * @param productTypeId The Id of the brand to remove
+ * @returns EDatabaseResponses.OK if the brand is deleted,
+ * EDatabaseResponses.DOES_NOT_EXIST if the Id does not relate to a brand.
+ * Rejects on database errors
+ */
+export const deleteBrand = (brandId: number): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "DELETE FROM brands WHERE id = $1",
+      [brandId],
+      (err: ICustomError, res) => {
+        if (err) {
+          console.error(`${err.code}: ${err.message}`);
+          reject(err);
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};
