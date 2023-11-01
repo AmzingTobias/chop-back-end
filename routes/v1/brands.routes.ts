@@ -1,7 +1,11 @@
 import { Router } from "express";
-import { getAllBrands } from "../../models/brands.models";
+import {
+  createNewBrand as createBrand,
+  getAllBrands,
+} from "../../models/brands.models";
 import { ERequestCodes } from "../../common/request-codes";
 import { ERequestTextResponses } from "../../common/request-text-response";
+import { EDatabaseResponses } from "../../data/data";
 
 export const brandRouter = Router();
 
@@ -41,5 +45,61 @@ brandRouter.get("/", async (_, res) => {
     res
       .status(ERequestCodes.INTERNAL_SERVER_ERROR_CODE)
       .send(ERequestTextResponses.INTERNAL_ERROR);
+  }
+});
+
+/**
+ * @swagger
+ * /v1/brands/:
+ *   post:
+ *     summary: Create a new brand
+ *     description: Create a new unique brand with a supplied brand name
+ *     parameters:
+ *       - in: body
+ *         name: name
+ *         required: true
+ *         description: The unique brand name
+ *         schema:
+ *           type: string
+ *     responses:
+ *       201:
+ *          description: Brand was created
+ *       409:
+ *          description: Brand name already in use
+ *       400:
+ *          description: Brand name missing
+ *       500:
+ *          description: Internal server error
+ */
+brandRouter.post("/", async (req, res) => {
+  const { name } = req.body;
+  if (typeof name === "string") {
+    const brandName = name.trim();
+    try {
+      const created = await createBrand(brandName);
+      switch (created) {
+        case EDatabaseResponses.OK:
+          res
+            .status(ERequestCodes.CREATED_CODE)
+            .send(ERequestTextResponses.BRAND_CREATED);
+          break;
+        case EDatabaseResponses.CONFLICT:
+          res
+            .status(ERequestCodes.CONFLICT_CODE)
+            .send(ERequestTextResponses.BRAND_ALREADY_EXISTS);
+          break;
+        default:
+          res.status(ERequestCodes.INTERNAL_SERVER_ERROR_CODE);
+      }
+    } catch (e) {
+      console.error(e);
+      res
+        .status(ERequestCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ERequestTextResponses.INTERNAL_ERROR);
+    }
+  } else {
+    res
+      .status(ERequestCodes.BAD_REQUEST_CODE)
+      .send(ERequestTextResponses.MISSING_FIELD_IN_REQ_BODY);
   }
 });

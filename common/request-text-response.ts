@@ -7,4 +7,6 @@ export enum ERequestTextResponses {
   PRODUCT_TYPE_CREATED = "Product type created",
   PRODUCT_TYPE_UPDATED = "Product type updated",
   PRODUCT_TYPE_DELETED = "Product type removed",
+  BRAND_ALREADY_EXISTS = "Brand already exists",
+  BRAND_CREATED = "Brand created",
 }
