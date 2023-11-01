@@ -15,8 +15,9 @@ export const productTypeRouter = Router();
 
 /**
  * @swagger
- * /v1/product-types:
+ * /product-types:
  *   get:
+ *     tags: [Product types]
  *     summary: Retrieve a lsit of product types
  *     description: Retrieve a list of product types.
  *     responses:
@@ -53,8 +54,9 @@ productTypeRouter.get("/", async (_, res) => {
 
 /**
  * @swagger
- * /v1/product-types:
+ * /product-types:
  *   post:
+ *     tags: [Product types]
  *     summary: Create a new product type
  *     description: Create a new unique product type with a supplied product type name
  *     parameters:
@@ -104,8 +106,9 @@ productTypeRouter.post("/", async (req, res) => {
 
 /**
  * @swagger
- * /v1/product-types/{id}:
+ * /product-types/{id}:
  *   put:
+ *     tags: [Product types]
  *     summary: Update a product type
  *     description: Update an existing product type name using the product type id
  *     parameters:
@@ -181,8 +184,9 @@ productTypeRouter.put("/:id", async (req, res) => {
 
 /**
  * @swagger
- * /v1/product-types/{id}:
+ * /product-types/{id}:
  *   delete:
+ *     tags: [Product types]
  *     summary: Delete a product type
  *     description: Delete a product type using its id
  *     parameters:

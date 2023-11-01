@@ -15,8 +15,9 @@ export const brandRouter = Router();
 
 /**
  * @swagger
- * /v1/brands:
+ * /brands:
  *   get:
+ *     tags: [Brands]
  *     summary: Retrieve a lsit of brands
  *     description: Retrieve a list of brands.
  *     responses:
@@ -53,8 +54,9 @@ brandRouter.get("/", async (_, res) => {
 
 /**
  * @swagger
- * /v1/brands:
+ * /brands:
  *   post:
+ *     tags: [Brands]
  *     summary: Create a new brand
  *     description: Create a new unique brand with a supplied brand name
  *     parameters:
@@ -108,8 +110,9 @@ brandRouter.post("/", async (req, res) => {
 
 /**
  * @swagger
- * /v1/brands/{id}:
+ * /brands/{id}:
  *   put:
+ *     tags: [Brands]
  *     summary: Update a brand
  *     description: Update an existing brand name using the brand id
  *     parameters:
@@ -178,8 +181,9 @@ brandRouter.put("/:id", async (req, res) => {
 
 /**
  * @swagger
- * /v1/brands/{id}:
+ * /brands/{id}:
  *   delete:
+ *     tags: [Brands]
  *     summary: Delete a brand
  *     description: Delete a brand using its id
  *     parameters:
