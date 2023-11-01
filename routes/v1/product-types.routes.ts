@@ -127,8 +127,11 @@ productTypeRouter.post("/", async (req, res) => {
  */
 productTypeRouter.put("/:id", async (req, res) => {
   const newSuppliedProductTypeName = req.body["product-type-name"];
-  const { id } = req.query;
-  if (typeof newSuppliedProductTypeName === "string" && !Number.isNaN(id)) {
+  const { id } = req.params;
+  if (
+    typeof newSuppliedProductTypeName === "string" &&
+    !Number.isNaN(Number(id))
+  ) {
     const trimmedProductTypeName = newSuppliedProductTypeName.trim();
     const productTypeId = Number(id);
     try {
@@ -139,15 +142,16 @@ productTypeRouter.put("/:id", async (req, res) => {
       switch (updated) {
         case EDatabaseResponses.OK:
           res.send("Product type updated");
-
+          break;
         case EDatabaseResponses.CONFLICT:
           res.status(CONFLICT_CODE).send("Product type name already exists");
-
+          break;
         case EDatabaseResponses.DOES_NOT_EXIST:
           res.status(BAD_REQUEST_CODE).send("Product type id does not exist");
-
+          break;
         default:
           res.sendStatus(INTERNAL_SERVER_ERROR_CODE);
+          break;
       }
     } catch (e) {
       console.error(e);
@@ -183,20 +187,25 @@ productTypeRouter.put("/:id", async (req, res) => {
  */
 productTypeRouter.delete("/:id", async (req, res) => {
   const { id } = req.params;
-  if (!Number.isNaN(id)) {
+  if (!Number.isNaN(Number(id))) {
     try {
       const deleted = await deleteProductType(Number(id));
       switch (deleted) {
         case EDatabaseResponses.OK:
           res.send("Product type removed");
+          break;
         case EDatabaseResponses.DOES_NOT_EXIST:
           res.status(BAD_REQUEST_CODE).send("Product type does not exist");
+          break;
         default:
           res.sendStatus(INTERNAL_SERVER_ERROR_CODE);
+          break;
       }
     } catch (e) {
       console.error(e);
       res.status(INTERNAL_SERVER_ERROR_CODE).send("Internal error");
     }
+  } else {
+    res.status(BAD_REQUEST_CODE).send("Invalid product type id");
   }
 });
