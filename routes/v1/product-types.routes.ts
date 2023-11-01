@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import {
   createProductType,
+  deleteProductType,
   getAllProductTypes,
   updateProductType,
 } from "../../models/product-types.models";
@@ -99,7 +100,7 @@ productTypeRouter.post("/", async (req, res) => {
  * @swagger
  * /v1/product-types/{id}:
  *   put:
- *     summary: Update a new product type
+ *     summary: Update a product type
  *     description: Update an existing product type name using the product type id
  *     parameters:
  *       - in: path
@@ -116,11 +117,11 @@ productTypeRouter.post("/", async (req, res) => {
  *           type: string
  *     responses:
  *       200:
- *          description: Product type update
+ *          description: Product type updated
  *       409:
  *          description: New product type name already exists
  *       400:
- *          description: Product type Id doesn't exist, was missing from the request or was invalid
+ *          description: Product type Id was invalid, or fields missing from request body
  *       500:
  *          description: Internal server error
  */
@@ -142,18 +143,60 @@ productTypeRouter.put("/:id", async (req, res) => {
         case EDatabaseResponses.CONFLICT:
           res.status(CONFLICT_CODE).send("Product type name already exists");
 
-        case EDatabaseResponses.UPDATE_DOES_NOT_EXIST:
+        case EDatabaseResponses.DOES_NOT_EXIST:
           res.status(BAD_REQUEST_CODE).send("Product type id does not exist");
 
         default:
           res.sendStatus(INTERNAL_SERVER_ERROR_CODE);
       }
     } catch (e) {
+      console.error(e);
       res.status(INTERNAL_SERVER_ERROR_CODE).send("Internal error");
     }
   } else if (newSuppliedProductTypeName === undefined) {
     res.status(BAD_REQUEST_CODE).send("Product type name missing");
   } else {
     res.status(BAD_REQUEST_CODE).send("Invalid product type id");
+  }
+});
+
+/**
+ * @swagger
+ * /v1/product-types/{id}:
+ *   delete:
+ *     summary: Delete a product type
+ *     description: Delete a product type using its id
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product type to delete
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *          description: Product type deleted
+ *       400:
+ *          description: Product type Id was invalid
+ *       500:
+ *          description: Internal server error
+ */
+productTypeRouter.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+  if (!Number.isNaN(id)) {
+    try {
+      const deleted = await deleteProductType(Number(id));
+      switch (deleted) {
+        case EDatabaseResponses.OK:
+          res.send("Product type removed");
+        case EDatabaseResponses.DOES_NOT_EXIST:
+          res.status(BAD_REQUEST_CODE).send("Product type does not exist");
+        default:
+          res.sendStatus(INTERNAL_SERVER_ERROR_CODE);
+      }
+    } catch (e) {
+      console.error(e);
+      res.status(INTERNAL_SERVER_ERROR_CODE).send("Internal error");
+    }
   }
 });

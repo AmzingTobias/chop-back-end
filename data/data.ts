@@ -4,7 +4,7 @@ import { Pool } from "pg";
 export enum EDatabaseResponses {
   OK,
   CONFLICT,
-  UPDATE_DOES_NOT_EXIST,
+  DOES_NOT_EXIST,
 }
 
 dotenv.config();
