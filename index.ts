@@ -5,6 +5,7 @@ import { productTypeRouter } from "./routes/v1/product-types.routes";
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { brandRouter } from "./routes/v1/brands.routes";
+import { productRouter } from "./routes/v1/product.routes";
 
 // Swagger Docs
 const swaggerSpecv1 = swaggerJSDoc({
@@ -25,6 +26,7 @@ const port = process.env.PORT;
 app.use(express.json());
 
 // Routes
+app.use("/v1/products", productRouter);
 app.use("/v1/product-types", productTypeRouter);
 app.use("/v1/brands", brandRouter);
 

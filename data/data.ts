@@ -5,6 +5,7 @@ export enum EDatabaseResponses {
   OK,
   CONFLICT,
   DOES_NOT_EXIST,
+  FOREIGN_KEY_VIOLATION,
 }
 
 dotenv.config();
