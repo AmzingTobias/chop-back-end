@@ -10,6 +10,7 @@ import {
   ETextResponse,
   EResponseStatusCodes,
 } from "../../common/response-types";
+import { EUserAccounts, verifyToken } from "../../security/security";
 
 export const productTypeRouter = Router();
 
@@ -74,7 +75,17 @@ productTypeRouter.get("/", async (_, res) => {
  *       500:
  *          description: Internal server error
  */
-productTypeRouter.post("/", async (req, res) => {
+productTypeRouter.post("/", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    req.user.accountTypeId !== EUserAccounts.sales ||
+    req.user.accountType !== EUserAccounts.admin
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const suppliedProductTypeName: string | undefined =
     req.body["product-type-name"];
   if (typeof suppliedProductTypeName === "string") {
@@ -132,7 +143,17 @@ productTypeRouter.post("/", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productTypeRouter.put("/:id", async (req, res) => {
+productTypeRouter.put("/:id", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    req.user.accountTypeId !== EUserAccounts.sales ||
+    req.user.accountType !== EUserAccounts.admin
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const newSuppliedProductTypeName = req.body["product-type-name"];
   const { id } = req.params;
   if (
@@ -202,7 +223,13 @@ productTypeRouter.put("/:id", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productTypeRouter.delete("/:id", async (req, res) => {
+productTypeRouter.delete("/:id", verifyToken, async (req, res) => {
+  if (!req.user || req.user.accountType !== EUserAccounts.admin) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const { id } = req.params;
   if (!Number.isNaN(Number(id))) {
     try {

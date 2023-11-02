@@ -10,6 +10,7 @@ import {
   EResponseStatusCodes,
 } from "../../common/response-types";
 import { EDatabaseResponses } from "../../data/data";
+import { EUserAccounts, verifyToken } from "../../security/security";
 
 export const brandRouter = Router();
 
@@ -74,7 +75,17 @@ brandRouter.get("/", async (_, res) => {
  *       500:
  *          description: Internal server error
  */
-brandRouter.post("/", async (req, res) => {
+brandRouter.post("/", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    req.user.accountTypeId !== EUserAccounts.sales ||
+    req.user.accountType !== EUserAccounts.admin
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const { name } = req.body;
   if (typeof name === "string") {
     const brandName = name.trim();
@@ -136,7 +147,17 @@ brandRouter.post("/", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-brandRouter.put("/:id", async (req, res) => {
+brandRouter.put("/:id", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    req.user.accountTypeId !== EUserAccounts.sales ||
+    req.user.accountType !== EUserAccounts.admin
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const { id } = req.params;
   const { name } = req.body;
   if (!Number.isNaN(Number(id)) && typeof name === "string") {
@@ -199,7 +220,13 @@ brandRouter.put("/:id", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-brandRouter.delete("/:id", async (req, res) => {
+brandRouter.delete("/:id", verifyToken, async (req, res) => {
+  if (!req.user || req.user.accountType !== EUserAccounts.admin) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const { id } = req.params;
   if (!Number.isNaN(Number(id))) {
     try {

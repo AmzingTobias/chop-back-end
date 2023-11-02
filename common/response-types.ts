@@ -27,4 +27,5 @@ export enum ETextResponse {
   ACCOUNT_DETAILS_INVALID = "Account details invalid",
   ACCOUNT_TYPE_INVALID = "Incorrect account login",
   ACCOUNT_ALREADY_EXISTS = "Account already exists",
+  UNAUTHORIZED_REQUEST = "Account lacks required permissions",
 }
