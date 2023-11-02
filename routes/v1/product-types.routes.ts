@@ -10,7 +10,7 @@ import {
   ETextResponse,
   EResponseStatusCodes,
 } from "../../common/response-types";
-import { EUserAccounts, verifyToken } from "../../security/security";
+import { EAccountTypes, verifyToken } from "../../security/security";
 
 export const productTypeRouter = Router();
 
@@ -78,8 +78,8 @@ productTypeRouter.get("/", async (_, res) => {
 productTypeRouter.post("/", verifyToken, async (req, res) => {
   if (
     !req.user ||
-    req.user.accountTypeId !== EUserAccounts.sales ||
-    req.user.accountType !== EUserAccounts.admin
+    req.user.accountTypeId !== EAccountTypes.sales ||
+    req.user.accountType !== EAccountTypes.admin
   ) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
@@ -146,8 +146,8 @@ productTypeRouter.post("/", verifyToken, async (req, res) => {
 productTypeRouter.put("/:id", verifyToken, async (req, res) => {
   if (
     !req.user ||
-    req.user.accountTypeId !== EUserAccounts.sales ||
-    req.user.accountType !== EUserAccounts.admin
+    req.user.accountTypeId !== EAccountTypes.sales ||
+    req.user.accountType !== EAccountTypes.admin
   ) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
@@ -224,7 +224,7 @@ productTypeRouter.put("/:id", verifyToken, async (req, res) => {
  *          description: Internal server error
  */
 productTypeRouter.delete("/:id", verifyToken, async (req, res) => {
-  if (!req.user || req.user.accountType !== EUserAccounts.admin) {
+  if (!req.user || req.user.accountType !== EAccountTypes.admin) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
       .send(ETextResponse.UNAUTHORIZED_REQUEST);

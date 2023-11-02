@@ -74,16 +74,17 @@ export const isAccountOfType = (
 };
 
 /**
- * Create a new customer account
+ * Create a new account
  * @param email The email to use for the account
  * @param hashedPassword A hashed password to use for the account
  * @returns EDatabaseResponses.OK if the account is created,
  * EDatabaseResponses.CONFLICT if the email is already in use.
  * Rejects on database errors
  */
-export const createCustomerAccount = (
+export const createAccount = (
   email: string,
-  hashedPassword: string
+  hashedPassword: string,
+  accountType: EAccountTypeTables
 ): Promise<EDatabaseResponses> => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -97,9 +98,8 @@ export const createCustomerAccount = (
           email,
           hashedPassword,
         ]);
-        const insertCustomerAccountText =
-          "INSERT INTO customer_accounts(account_id) VALUES ($1)";
-        await client.query(insertCustomerAccountText, [res.rows[0].id]);
+        const insertAccountText = `INSERT INTO ${accountType}(account_id) VALUES ($1)`;
+        await client.query(insertAccountText, [res.rows[0].id]);
         await client.query("COMMIT");
         transactionStatus = EDatabaseResponses.OK;
       } catch (err) {

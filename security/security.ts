@@ -2,9 +2,10 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { Request, Response, NextFunction } from "express";
 import { EResponseStatusCodes, ETextResponse } from "../common/response-types";
+import { EAccountTypeTables } from "../models/auth.models";
 
 // Order should not be changed as it will interfere with existing tokens
-export const enum EUserAccounts {
+export const enum EAccountTypes {
   customer = 0,
   sales = 1,
   support = 2,
@@ -12,10 +13,58 @@ export const enum EUserAccounts {
   warehouse = 4,
 }
 
+/**
+ * Convert an account type enum to an account table enum
+ * @param accountType The account type to get the table enum for
+ * @returns The account table table enum. undefined is only returned on failure to update both enums
+ */
+export const account_type_to_account_table = (
+  accountType: EAccountTypes
+): EAccountTypeTables | undefined => {
+  switch (accountType) {
+    case EAccountTypes.customer:
+      return EAccountTypeTables.customer;
+    case EAccountTypes.sales:
+      return EAccountTypeTables.sale_accounts;
+    case EAccountTypes.support:
+      return EAccountTypeTables.support_accounts;
+    case EAccountTypes.admin:
+      return EAccountTypeTables.admin;
+    case EAccountTypes.warehouse:
+      return EAccountTypeTables.warehouse_accounts;
+    default:
+      return undefined;
+  }
+};
+
+/**
+ * Convert an account table enum to an account type enum
+ * @param accountTable The account table to get the type enum for
+ * @returns The account type enum. undefined is only returned on failure to update both enums
+ */
+export const account_table_to_account_type = (
+  accountTable: EAccountTypeTables
+): EAccountTypes | undefined => {
+  switch (accountTable) {
+    case EAccountTypeTables.customer:
+      return EAccountTypes.customer;
+    case EAccountTypeTables.sale_accounts:
+      return EAccountTypes.sales;
+    case EAccountTypeTables.support_accounts:
+      return EAccountTypes.support;
+    case EAccountTypeTables.admin:
+      return EAccountTypes.admin;
+    case EAccountTypeTables.warehouse_accounts:
+      return EAccountTypes.warehouse;
+    default:
+      return undefined;
+  }
+};
+
 // The type found inside the jwt token
 export type TAccountAuth = {
   user_id: number;
-  accountType: EUserAccounts;
+  accountType: EAccountTypes;
   accountTypeId: number;
 };
 
@@ -75,7 +124,7 @@ export const validateAccountPassword = (
  */
 export const createJWTForUser = (
   user_id: number,
-  accountType: EUserAccounts,
+  accountType: EAccountTypes,
   accountTypeId: number
 ): string => {
   return jwt.sign(

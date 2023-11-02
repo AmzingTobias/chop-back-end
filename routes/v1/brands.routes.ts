@@ -10,7 +10,7 @@ import {
   EResponseStatusCodes,
 } from "../../common/response-types";
 import { EDatabaseResponses } from "../../data/data";
-import { EUserAccounts, verifyToken } from "../../security/security";
+import { EAccountTypes, verifyToken } from "../../security/security";
 
 export const brandRouter = Router();
 
@@ -78,8 +78,8 @@ brandRouter.get("/", async (_, res) => {
 brandRouter.post("/", verifyToken, async (req, res) => {
   if (
     !req.user ||
-    req.user.accountTypeId !== EUserAccounts.sales ||
-    req.user.accountType !== EUserAccounts.admin
+    req.user.accountTypeId !== EAccountTypes.sales ||
+    req.user.accountType !== EAccountTypes.admin
   ) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
@@ -150,8 +150,8 @@ brandRouter.post("/", verifyToken, async (req, res) => {
 brandRouter.put("/:id", verifyToken, async (req, res) => {
   if (
     !req.user ||
-    req.user.accountTypeId !== EUserAccounts.sales ||
-    req.user.accountType !== EUserAccounts.admin
+    req.user.accountTypeId !== EAccountTypes.sales ||
+    req.user.accountType !== EAccountTypes.admin
   ) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
@@ -221,7 +221,7 @@ brandRouter.put("/:id", verifyToken, async (req, res) => {
  *          description: Internal server error
  */
 brandRouter.delete("/:id", verifyToken, async (req, res) => {
-  if (!req.user || req.user.accountType !== EUserAccounts.admin) {
+  if (!req.user || req.user.accountType !== EAccountTypes.admin) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
       .send(ETextResponse.UNAUTHORIZED_REQUEST);

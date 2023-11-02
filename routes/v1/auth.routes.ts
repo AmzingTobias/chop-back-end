@@ -1,21 +1,9 @@
 import { Router } from "express";
+import { EAccountTypeTables } from "../../models/auth.models";
 import {
-  EAccountTypeTables,
-  createCustomerAccount,
-  getUserWithEmail,
-  isAccountOfType,
-} from "../../models/auth.models";
-import {
-  EResponseStatusCodes,
-  ETextResponse,
-} from "../../common/response-types";
-import {
-  EUserAccounts,
-  createJWTForUser,
-  hashPassword,
-  validateAccountPassword,
-} from "../../security/security";
-import { EDatabaseResponses } from "../../data/data";
+  create_account_controller,
+  login_to_account_controller,
+} from "../../controllers/auth.controllers";
 
 export const authRouter = Router();
 
@@ -23,7 +11,7 @@ export const authRouter = Router();
  * @swagger
  * /customer/create:
  *   post:
- *     tags: [Customers, Accounts]
+ *     tags: [Customer, Accounts]
  *     summary: Create a new customer account
  *     description: Create a new customer account with an email and password
  *     parameters:
@@ -50,49 +38,14 @@ export const authRouter = Router();
  *          description: Internal server error
  */
 authRouter.post("/customer/create/", (req, res) => {
-  const { email, password } = req.body;
-  if (typeof email !== "string" || typeof password !== "string") {
-    return res
-      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
-      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
-  }
-
-  hashPassword(password)
-    .then(async (hashedPassword) => {
-      try {
-        const created = await createCustomerAccount(
-          email.trim(),
-          hashedPassword
-        );
-        switch (created) {
-          case EDatabaseResponses.OK:
-            res.send();
-            break;
-          case EDatabaseResponses.CONFLICT:
-            res
-              .status(EResponseStatusCodes.CONFLICT_CODE)
-              .send(ETextResponse.ACCOUNT_ALREADY_EXISTS);
-            break;
-          default:
-            res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
-            break;
-        }
-      } catch (_) {
-        res
-          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
-          .send(ETextResponse.INTERNAL_ERROR);
-      }
-    })
-    .catch(() => {
-      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
-    });
+  create_account_controller(req, res, EAccountTypeTables.customer);
 });
 
 /**
  * @swagger
  * /customer/login:
  *   post:
- *     tags: [Customers, Accounts]
+ *     tags: [Customer, Accounts]
  *     summary: Login to a customer account
  *     description: Login to an existing customer account and receive the auth token for the account
  *     parameters:
@@ -110,7 +63,7 @@ authRouter.post("/customer/create/", (req, res) => {
  *           type: string
  *     responses:
  *       200:
- *          description: Customer account detailed valid
+ *          description: Customer account details valid
  *          schema:
  *             type: object
  *             properties:
@@ -120,70 +73,306 @@ authRouter.post("/customer/create/", (req, res) => {
  *       400:
  *          description: Email or password missing in request body
  *       401:
- *          description: Customer details invalid or account is not a customer
+ *          description: Account details invalid or account is not a customer account
  *       500:
  *          description: Internal server error
  */
 authRouter.post("/customer/login", async (req, res) => {
-  const { email, password } = req.body;
-  if (typeof email === "string" && typeof password === "string") {
-    try {
-      const account = await getUserWithEmail(email);
-      if (account !== null) {
-        validateAccountPassword(password, account.password)
-          .then((validated) => {
-            if (validated) {
-              isAccountOfType(EAccountTypeTables.customer, account.id)
-                .then((customerAccount) => {
-                  if (customerAccount.isAccountType) {
-                    res.json({
-                      token: createJWTForUser(
-                        account.id,
-                        EUserAccounts.customer,
-                        customerAccount.accountTypeId
-                      ),
-                    });
-                  } else {
-                    res
-                      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
-                      .send(ETextResponse.ACCOUNT_TYPE_INVALID);
-                  }
-                })
-                .catch(() => {
-                  res
-                    .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
-                    .send(ETextResponse.INTERNAL_ERROR);
-                });
-            } else {
-              res
-                .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
-                .send(ETextResponse.ACCOUNT_DETAILS_INVALID);
-            }
-          })
-          .catch(() => {
-            res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
-          });
-      } else {
-        res
-          .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
-          .send(ETextResponse.ACCOUNT_DETAILS_INVALID);
-      }
-    } catch (_) {
-      res
-        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
-        .send(ETextResponse.INTERNAL_ERROR);
-    }
-  } else {
-    res
-      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
-      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
-  }
+  login_to_account_controller(req, res, EAccountTypeTables.customer);
 });
 
-authRouter.post("/staff/login", (req, res) => {
-  const { email, password } = req.body;
+/**
+ * @swagger
+ * /sales/create:
+ *   post:
+ *     tags: [Sales, Accounts]
+ *     summary: Create a new sales account
+ *     description: Create a new sales account with an email and password
+ *     parameters:
+ *       - in: body
+ *         name: email
+ *         required: true
+ *         description: The unique email for the account
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: password
+ *         required: true
+ *         description: The password for the account
+ *         schema:
+ *           type: string
+ *     responses:
+ *       201:
+ *          description: Sales account created
+ *       409:
+ *          description: Email already exists to another account
+ *       400:
+ *          description: Email or password missing in request body
+ *       500:
+ *          description: Internal server error
+ */
+authRouter.post("/sales/create", (req, res) => {
+  create_account_controller(req, res, EAccountTypeTables.sale_accounts);
 });
 
+/**
+ * @swagger
+ * /sales/login:
+ *   post:
+ *     tags: [Sales, Accounts]
+ *     summary: Login to a sales account
+ *     description: Login to an existing sales account and receive the auth token for the account
+ *     parameters:
+ *       - in: body
+ *         name: email
+ *         required: true
+ *         description: The email for the account
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: password
+ *         required: true
+ *         description: The password for the account
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *          description: Sales account details valid
+ *          schema:
+ *             type: object
+ *             properties:
+ *               auth:
+ *                 type: string
+ *                 description: The auth token for the account
+ *       400:
+ *          description: Email or password missing in request body
+ *       401:
+ *          description: Account details invalid or account is not a sales account
+ *       500:
+ *          description: Internal server error
+ */
+authRouter.post("/sales/login", (req, res) => {
+  login_to_account_controller(req, res, EAccountTypeTables.sale_accounts);
+});
+
+/**
+ * @swagger
+ * /admin/create:
+ *   post:
+ *     tags: [Admin, Accounts]
+ *     summary: Create a new admin account
+ *     description: Create a new admin account with an email and password
+ *     parameters:
+ *       - in: body
+ *         name: email
+ *         required: true
+ *         description: The unique email for the account
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: password
+ *         required: true
+ *         description: The password for the account
+ *         schema:
+ *           type: string
+ *     responses:
+ *       201:
+ *          description: Admin account created
+ *       409:
+ *          description: Email already exists to another account
+ *       400:
+ *          description: Email or password missing in request body
+ *       500:
+ *          description: Internal server error
+ */
+authRouter.post("/admin/create", (req, res) => {
+  create_account_controller(req, res, EAccountTypeTables.admin);
+});
+
+/**
+ * @swagger
+ * /admin/login:
+ *   post:
+ *     tags: [Admin, Accounts]
+ *     summary: Login to an admin account
+ *     description: Login to an existing admin account and receive the auth token for the account
+ *     parameters:
+ *       - in: body
+ *         name: email
+ *         required: true
+ *         description: The email for the account
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: password
+ *         required: true
+ *         description: The password for the account
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *          description: Admin account details valid
+ *          schema:
+ *             type: object
+ *             properties:
+ *               auth:
+ *                 type: string
+ *                 description: The auth token for the account
+ *       400:
+ *          description: Email or password missing in request body
+ *       401:
+ *          description: Account details invalid or account is not an admin account
+ *       500:
+ *          description: Internal server error
+ */
+authRouter.post("/admin/login", (req, res) => {
+  login_to_account_controller(req, res, EAccountTypeTables.admin);
+});
+
+/**
+ * @swagger
+ * /support/create:
+ *   post:
+ *     tags: [Support, Accounts]
+ *     summary: Create a new support account
+ *     description: Create a new support account with an email and password
+ *     parameters:
+ *       - in: body
+ *         name: email
+ *         required: true
+ *         description: The unique email for the account
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: password
+ *         required: true
+ *         description: The password for the account
+ *         schema:
+ *           type: string
+ *     responses:
+ *       201:
+ *          description: Support account created
+ *       409:
+ *          description: Email already exists to another account
+ *       400:
+ *          description: Email or password missing in request body
+ *       500:
+ *          description: Internal server error
+ */
+authRouter.post("/support/create", (req, res) => {
+  create_account_controller(req, res, EAccountTypeTables.support_accounts);
+});
+
+/**
+ * @swagger
+ * /support/login:
+ *   post:
+ *     tags: [Support, Accounts]
+ *     summary: Login to a support account
+ *     description: Login to an existing support account and receive the auth token for the account
+ *     parameters:
+ *       - in: body
+ *         name: email
+ *         required: true
+ *         description: The email for the account
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: password
+ *         required: true
+ *         description: The password for the account
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *          description: Support account details valid
+ *          schema:
+ *             type: object
+ *             properties:
+ *               auth:
+ *                 type: string
+ *                 description: The auth token for the account
+ *       400:
+ *          description: Email or password missing in request body
+ *       401:
+ *          description: Account details invalid or account is not a support account
+ *       500:
+ *          description: Internal server error
+ */
+authRouter.post("/support/login", (req, res) => {
+  login_to_account_controller(req, res, EAccountTypeTables.support_accounts);
+});
+
+/**
+ * @swagger
+ * /warehouse/create:
+ *   post:
+ *     tags: [Warehouse, Accounts]
+ *     summary: Create a new warehouse account
+ *     description: Create a new warehouse account with an email and password
+ *     parameters:
+ *       - in: body
+ *         name: email
+ *         required: true
+ *         description: The unique email for the account
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: password
+ *         required: true
+ *         description: The password for the account
+ *         schema:
+ *           type: string
+ *     responses:
+ *       201:
+ *          description: Warehouse account created
+ *       409:
+ *          description: Email already exists to another account
+ *       400:
+ *          description: Email or password missing in request body
+ *       500:
+ *          description: Internal server error
+ */
+authRouter.post("/warehouse/create", (req, res) => {
+  create_account_controller(req, res, EAccountTypeTables.warehouse_accounts);
+});
+
+/**
+ * @swagger
+ * /warehouse/login:
+ *   post:
+ *     tags: [Warehouse, Accounts]
+ *     summary: Login to a warehouse account
+ *     description: Login to an existing warehouse account and receive the auth token for the account
+ *     parameters:
+ *       - in: body
+ *         name: email
+ *         required: true
+ *         description: The email for the account
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: password
+ *         required: true
+ *         description: The password for the account
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *          description: Warehouse account details valid
+ *          schema:
+ *             type: object
+ *             properties:
+ *               auth:
+ *                 type: string
+ *                 description: The auth token for the account
+ *       400:
+ *          description: Email or password missing in request body
+ *       401:
+ *          description: Account details invalid or account is not a warehouse account
+ *       500:
+ *          description: Internal server error
+ */
 authRouter.post("/warehouse/login", (req, res) => {
-  const { email, password } = req.body;
+  login_to_account_controller(req, res, EAccountTypeTables.warehouse_accounts);
 });
