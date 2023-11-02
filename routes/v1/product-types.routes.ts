@@ -10,6 +10,7 @@ import {
   ETextResponse,
   EResponseStatusCodes,
 } from "../../common/response-types";
+import { EAccountTypes, verifyToken } from "../../security/security";
 
 export const productTypeRouter = Router();
 
@@ -23,21 +24,19 @@ export const productTypeRouter = Router();
  *     responses:
  *       200:
  *         description: A list of product types.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                     description: The id of the product type.
- *                     example: 1
- *                   type:
- *                     type: string
- *                     description: The name of the product type.
- *                     example: Technology
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: The id of the product type.
+ *                 example: 1
+ *               type:
+ *                 type: string
+ *                 description: The name of the product type.
+ *                 example: Technology
  *       500:
  *          description: Internal server error
  */
@@ -76,7 +75,17 @@ productTypeRouter.get("/", async (_, res) => {
  *       500:
  *          description: Internal server error
  */
-productTypeRouter.post("/", async (req, res) => {
+productTypeRouter.post("/", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    req.user.accountTypeId !== EAccountTypes.sales ||
+    req.user.accountType !== EAccountTypes.admin
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const suppliedProductTypeName: string | undefined =
     req.body["product-type-name"];
   if (typeof suppliedProductTypeName === "string") {
@@ -134,7 +143,17 @@ productTypeRouter.post("/", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productTypeRouter.put("/:id", async (req, res) => {
+productTypeRouter.put("/:id", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    req.user.accountTypeId !== EAccountTypes.sales ||
+    req.user.accountType !== EAccountTypes.admin
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const newSuppliedProductTypeName = req.body["product-type-name"];
   const { id } = req.params;
   if (
@@ -204,7 +223,13 @@ productTypeRouter.put("/:id", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productTypeRouter.delete("/:id", async (req, res) => {
+productTypeRouter.delete("/:id", verifyToken, async (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.admin) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const { id } = req.params;
   if (!Number.isNaN(Number(id))) {
     try {

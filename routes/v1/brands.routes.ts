@@ -10,6 +10,7 @@ import {
   EResponseStatusCodes,
 } from "../../common/response-types";
 import { EDatabaseResponses } from "../../data/data";
+import { EAccountTypes, verifyToken } from "../../security/security";
 
 export const brandRouter = Router();
 
@@ -23,21 +24,19 @@ export const brandRouter = Router();
  *     responses:
  *       200:
  *         description: A list of brands.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                     description: The id of the brand.
- *                     example: 1
- *                   name:
- *                     type: string
- *                     description: The name of the brand.
- *                     example: AMD
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: The id of the brand.
+ *                 example: 1
+ *               name:
+ *                 type: string
+ *                 description: The name of the brand.
+ *                 example: AMD
  *       500:
  *          description: Internal server error
  */
@@ -76,7 +75,17 @@ brandRouter.get("/", async (_, res) => {
  *       500:
  *          description: Internal server error
  */
-brandRouter.post("/", async (req, res) => {
+brandRouter.post("/", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    req.user.accountTypeId !== EAccountTypes.sales ||
+    req.user.accountType !== EAccountTypes.admin
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const { name } = req.body;
   if (typeof name === "string") {
     const brandName = name.trim();
@@ -125,7 +134,7 @@ brandRouter.post("/", async (req, res) => {
  *       - in: body
  *         name: name
  *         required: true
- *         description: The new uniue brand name
+ *         description: The new unique brand name
  *         schema:
  *           type: string
  *     responses:
@@ -138,7 +147,17 @@ brandRouter.post("/", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-brandRouter.put("/:id", async (req, res) => {
+brandRouter.put("/:id", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    req.user.accountTypeId !== EAccountTypes.sales ||
+    req.user.accountType !== EAccountTypes.admin
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const { id } = req.params;
   const { name } = req.body;
   if (!Number.isNaN(Number(id)) && typeof name === "string") {
@@ -201,7 +220,13 @@ brandRouter.put("/:id", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-brandRouter.delete("/:id", async (req, res) => {
+brandRouter.delete("/:id", verifyToken, async (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.admin) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
   const { id } = req.params;
   if (!Number.isNaN(Number(id))) {
     try {
