@@ -125,3 +125,37 @@ export const createAccount = (
     }
   });
 };
+
+/**
+ * Update an account's password
+ * @param accountId Id of the account to update the password for
+ * @param hashedPassword The new hashed password to set
+ * @returns EDatabaseResponses.OK if the password is updated,
+ * EDatabaseResponses.DOES_NOT_EXIST if the account id does not relate to a password.
+ * Rejects on database errors
+ */
+export const update_account_password = (
+  accountId: number,
+  hashedPassword: string
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "UPDATE accounts SET password = $1 WHERE id = $2",
+      [hashedPassword, accountId],
+      (err: ICustomError, res) => {
+        if (err) {
+          console.error(
+            `${(err as ICustomError).code}: ${(err as ICustomError).message}`
+          );
+          reject(err.message);
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};

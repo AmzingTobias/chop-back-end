@@ -1,9 +1,19 @@
 import { Router } from "express";
-import { EAccountTypeTables } from "../../models/auth.models";
+import {
+  EAccountTypeTables,
+  update_account_password,
+} from "../../models/auth.models";
 import {
   create_account_controller,
   login_to_account_controller,
 } from "../../controllers/auth.controllers";
+import { verify } from "crypto";
+import { hashPassword, verifyToken } from "../../security/security";
+import {
+  EResponseStatusCodes,
+  ETextResponse,
+} from "../../common/response-types";
+import { EDatabaseResponses } from "../../data/data";
 
 export const authRouter = Router();
 
@@ -375,4 +385,79 @@ authRouter.post("/warehouse/create", (req, res) => {
  */
 authRouter.post("/warehouse/login", (req, res) => {
   login_to_account_controller(req, res, EAccountTypeTables.warehouse_accounts);
+});
+
+/**
+ * @swagger
+ * /change-password:
+ *   put:
+ *     tags: [Accounts]
+ *     summary: Update an account's password
+ *     description: Update an account's password. The account to update is taken from the credentials
+ *     parameters:
+ *       - in: body
+ *         name: new-password
+ *         required: true
+ *         description: The new password for the account
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *          description: Password updated for the account
+ *       400:
+ *          description: Password missing from request body
+ *       401:
+ *          description: Auth token not provided
+ *       500:
+ *          description: Internal server error
+ */
+authRouter.put("/change-password", verifyToken, (req, res) => {
+  const { "new-password": newPassword } = req.body;
+  if (typeof newPassword === "string") {
+    // Ensure only the user can update their own password
+    if (req.user) {
+      const accountIdToUpdate = req.user.user_id;
+      hashPassword(newPassword)
+        .then(async (hashedPassword) => {
+          try {
+            const updated = await update_account_password(
+              accountIdToUpdate,
+              hashedPassword
+            );
+            switch (updated) {
+              case EDatabaseResponses.OK:
+                res.send(ETextResponse.ACCOUNT_PASS_UPDATED);
+                break;
+              case EDatabaseResponses.DOES_NOT_EXIST:
+                res
+                  .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+                  .send(ETextResponse.ACCOUNT_DETAILS_INVALID);
+                break;
+              default:
+                res
+                  .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+                  .send(ETextResponse.INTERNAL_ERROR);
+                break;
+            }
+          } catch (_) {
+            res
+              .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+              .send(ETextResponse.INTERNAL_ERROR);
+          }
+        })
+        .catch(() => {
+          res
+            .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+            .send(ETextResponse.INTERNAL_ERROR);
+        });
+    } else {
+      res
+        .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+        .send(ETextResponse.UNAUTHORIZED_REQUEST);
+    }
+  } else {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
 });
