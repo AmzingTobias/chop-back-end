@@ -23,21 +23,19 @@ export const productTypeRouter = Router();
  *     responses:
  *       200:
  *         description: A list of product types.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                     description: The id of the product type.
- *                     example: 1
- *                   type:
- *                     type: string
- *                     description: The name of the product type.
- *                     example: Technology
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: The id of the product type.
+ *                 example: 1
+ *               type:
+ *                 type: string
+ *                 description: The name of the product type.
+ *                 example: Technology
  *       500:
  *          description: Internal server error
  */

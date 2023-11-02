@@ -23,21 +23,19 @@ export const brandRouter = Router();
  *     responses:
  *       200:
  *         description: A list of brands.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                     description: The id of the brand.
- *                     example: 1
- *                   name:
- *                     type: string
- *                     description: The name of the brand.
- *                     example: AMD
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: The id of the brand.
+ *                 example: 1
+ *               name:
+ *                 type: string
+ *                 description: The name of the brand.
+ *                 example: AMD
  *       500:
  *          description: Internal server error
  */
@@ -125,7 +123,7 @@ brandRouter.post("/", async (req, res) => {
  *       - in: body
  *         name: name
  *         required: true
- *         description: The new uniue brand name
+ *         description: The new unique brand name
  *         schema:
  *           type: string
  *     responses:
