@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  createNewProduct,
   updateBrandId,
   updateProductDescription,
   updateProductName,
@@ -362,5 +363,133 @@ productRouter.delete("/:id/brand", verifyToken, async (req, res) => {
         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
         .send(ETextResponse.INTERNAL_ERROR);
     }
+  }
+});
+
+/**
+ * @swagger
+ * /products:
+ *   post:
+ *     tags: [Products]
+ *     summary: Create a new product
+ *     description: Create a new product for the store
+ *     parameters:
+ *       - in: body
+ *         name: name
+ *         required: true
+ *         description: The name of the product
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: price
+ *         required: true
+ *         description: The price to list the product with
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: product-type-ids
+ *         required: false
+ *         description: The list of categories this product falls under
+ *         schema:
+ *           type: array
+ *           items:
+ *            type:
+ *              number
+ *       - in: body
+ *         name: brand-id
+ *         required: false
+ *         description: The id of the brand that created this product
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: description
+ *         required: false
+ *         description: The list of categories this product falls under
+ *         schema:
+ *           type: string
+ *     responses:
+ *       201:
+ *          description: Product was created
+ *       400:
+ *          description: Missing fields in request body, or the brand ids / product ids supplied are invalid
+ *       401:
+ *          description: User lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.post("/", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    if (
+      !req.user ||
+      (req.user.accountType !== EAccountTypes.admin &&
+        req.user.accountType !== EAccountTypes.sales)
+    ) {
+      return res
+        .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+        .send(ETextResponse.UNAUTHORIZED_REQUEST);
+    }
+  }
+
+  const {
+    name,
+    price,
+    "product-type-ids": productTypeIds,
+    "brand-id": brandId,
+    description,
+  } = req.body;
+  if (
+    typeof name === "string" &&
+    typeof price === "number" &&
+    (typeof (brandId === "number") ||
+      brandId === undefined ||
+      brandId === null) &&
+    (typeof description === "string" ||
+      description === undefined ||
+      description === null) &&
+    Array.isArray(productTypeIds) &&
+    productTypeIds.every(
+      (possibleNumber) => !Number.isNaN(Number(possibleNumber))
+    )
+  ) {
+    try {
+      const created = await createNewProduct(
+        name,
+        productTypeIds,
+        price,
+        brandId,
+        description
+      );
+      switch (created) {
+        case EDatabaseResponses.OK:
+          res
+            .status(EResponseStatusCodes.CREATED_CODE)
+            .send(ETextResponse.PRODUCT_CREATED);
+          break;
+        case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
+          res
+            .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+            .send(
+              `${ETextResponse.PRODUCT_TYPE_ID_NOT_EXIST} or ${ETextResponse.BRAND_ID_NOT_EXIST}`
+            );
+          break;
+        default:
+          res
+            .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+            .send(ETextResponse.INTERNAL_ERROR);
+          break;
+      }
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } else {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   }
 });

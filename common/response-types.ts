@@ -12,7 +12,7 @@ export enum ETextResponse {
   ID_INVALID_IN_REQ = "Id invalid",
   // Product types
   PRODUCT_TYPE_ALREADY_EXISTS = "Product type name already exists",
-  PRODUCT_TYPE_ID_NOT_EXIST = "Product does not exist",
+  PRODUCT_TYPE_ID_NOT_EXIST = "Product type does not exist",
   PRODUCT_TYPE_CREATED = "Product type created",
   PRODUCT_TYPE_UPDATED = "Product type updated",
   PRODUCT_TYPE_DELETED = "Product type removed",

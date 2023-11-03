@@ -116,3 +116,76 @@ export const updateBrandId = (
     );
   });
 };
+
+/**
+ * Create a new product
+ * @param productName The name of the products
+ * @param productTypeIds The list of category ids this product falls under
+ * @param price The price to list the product for
+ * @param brandId The id of the brand this product is for
+ * @param description A description of the product
+ * @returns EDatabaseResponses.OK if the product is created,
+ * EDatabaseResponses.FOREIGN_KEY_VIOLATION if the entries for the product
+ * type ids or brand ids are invalid.
+ * Rejects on database errors
+ */
+export const createNewProduct = (
+  productName: string,
+  productTypeIds: number[],
+  price: number,
+  brandId?: number,
+  description?: string
+): Promise<EDatabaseResponses> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const client = await pool.connect();
+      let transactionStatus: EDatabaseResponses | undefined = undefined;
+      try {
+        client.query("BEGIN");
+        const createProductQuery =
+          "INSERT INTO products(name, brand_id, description) VALUES ($1, $2, $3) RETURNING id";
+        const res = await client.query(createProductQuery, [
+          productName,
+          brandId,
+          description,
+        ]);
+        const createProductStockLevelQuery =
+          "INSERT INTO product_stock_levels(product_id) VALUES($1)";
+        await client.query(createProductStockLevelQuery, [res.rows[0].id]);
+        const createProductPriceQuery =
+          "INSERT INTO product_prices(product_id, price) VALUES($1, $2)";
+        await client.query(createProductPriceQuery, [
+          res.rows[0].id,
+          price.toFixed(2),
+        ]);
+        productTypeIds.forEach(async (productTypeId) => {
+          await client.query(
+            "INSERT INTO assigned_product_type(product_id, type_id) VALUES($1, $2)",
+            [res.rows[0].id, productTypeId]
+          );
+        });
+        await client.query("COMMIT");
+        transactionStatus = EDatabaseResponses.OK;
+      } catch (err) {
+        if ((err as ICustomError).code === FOREIGN_KEY_VIOLATION) {
+          transactionStatus = EDatabaseResponses.FOREIGN_KEY_VIOLATION;
+        } else {
+          console.error(
+            `${(err as ICustomError).code}: ${(err as ICustomError).message}`
+          );
+        }
+        await client.query("ROLLBACK");
+      } finally {
+        client.release();
+        if (transactionStatus === undefined) {
+          reject();
+        } else {
+          resolve(transactionStatus);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      reject(err);
+    }
+  });
+};
