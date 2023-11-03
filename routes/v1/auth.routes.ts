@@ -121,6 +121,8 @@ authRouter.post("/customer/login", async (req, res) => {
  *          description: Email already exists to another account
  *       400:
  *          description: Email or password missing in request body
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -200,6 +202,8 @@ authRouter.post("/sales/login", (req, res) => {
  *          description: Email already exists to another account
  *       400:
  *          description: Email or password missing in request body
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -279,6 +283,8 @@ authRouter.post("/admin/login", (req, res) => {
  *          description: Email already exists to another account
  *       400:
  *          description: Email or password missing in request body
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -358,6 +364,8 @@ authRouter.post("/support/login", (req, res) => {
  *          description: Email already exists to another account
  *       400:
  *          description: Email or password missing in request body
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -430,7 +438,7 @@ authRouter.post("/warehouse/login", (req, res) => {
  *       400:
  *          description: Password missing from request body
  *       401:
- *          description: Auth token not provided
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */

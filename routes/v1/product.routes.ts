@@ -39,6 +39,8 @@ export const productRouter = Router();
  *          description: Product's name updated
  *       400:
  *          description: Product does not exist
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -113,6 +115,8 @@ productRouter.put("/:id/name", verifyToken, async (req, res) => {
  *          description: Product's description updated
  *       400:
  *          description: Product does not exist
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -184,6 +188,8 @@ productRouter.put("/:id/description", verifyToken, async (req, res) => {
  *          description: Product's description removed
  *       400:
  *          description: Product does not exist
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -251,6 +257,8 @@ productRouter.delete("/:id/description", verifyToken, async (req, res) => {
  *          description: Product's brand updated
  *       400:
  *          description: Product or brand does not exist
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -324,6 +332,8 @@ productRouter.put("/:id/brand", verifyToken, async (req, res) => {
  *          description: Product's brand removed
  *       400:
  *          description: Product does not exist
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -413,7 +423,7 @@ productRouter.delete("/:id/brand", verifyToken, async (req, res) => {
  *       400:
  *          description: Missing fields in request body, or the brand ids / product ids supplied are invalid
  *       401:
- *          description: User lacks required permissions
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */

@@ -72,6 +72,8 @@ productTypeRouter.get("/", async (_, res) => {
  *          description: Product type name already in use
  *       400:
  *          description: Product type name missing
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -140,6 +142,8 @@ productTypeRouter.post("/", verifyToken, async (req, res) => {
  *          description: New product type name already exists
  *       400:
  *          description: Product type Id was invalid, or fields missing from request body
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -220,6 +224,8 @@ productTypeRouter.put("/:id", verifyToken, async (req, res) => {
  *          description: Product type deleted
  *       400:
  *          description: Product type Id was invalid
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
