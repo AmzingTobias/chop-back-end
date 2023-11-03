@@ -7,8 +7,11 @@ import {
   create_account_controller,
   login_to_account_controller,
 } from "../../controllers/auth.controllers";
-import { verify } from "crypto";
-import { hashPassword, verifyToken } from "../../security/security";
+import {
+  EAccountTypes,
+  hashPassword,
+  verifyToken,
+} from "../../security/security";
 import {
   EResponseStatusCodes,
   ETextResponse,
@@ -121,7 +124,12 @@ authRouter.post("/customer/login", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-authRouter.post("/sales/create", (req, res) => {
+authRouter.post("/sales/create", verifyToken, (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.admin) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
   create_account_controller(req, res, EAccountTypeTables.sale_accounts);
 });
 
@@ -195,7 +203,12 @@ authRouter.post("/sales/login", (req, res) => {
  *       500:
  *          description: Internal server error
  */
-authRouter.post("/admin/create", (req, res) => {
+authRouter.post("/admin/create", verifyToken, (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.admin) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
   create_account_controller(req, res, EAccountTypeTables.admin);
 });
 
@@ -269,7 +282,12 @@ authRouter.post("/admin/login", (req, res) => {
  *       500:
  *          description: Internal server error
  */
-authRouter.post("/support/create", (req, res) => {
+authRouter.post("/support/create", verifyToken, (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.admin) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
   create_account_controller(req, res, EAccountTypeTables.support_accounts);
 });
 
@@ -343,7 +361,12 @@ authRouter.post("/support/login", (req, res) => {
  *       500:
  *          description: Internal server error
  */
-authRouter.post("/warehouse/create", (req, res) => {
+authRouter.post("/warehouse/create", verifyToken, (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.admin) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
   create_account_controller(req, res, EAccountTypeTables.warehouse_accounts);
 });
 
