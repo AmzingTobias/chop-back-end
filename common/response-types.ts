@@ -1,6 +1,6 @@
 export enum EResponseStatusCodes {
-  CREATED_CODE = 201,
   INTERNAL_SERVER_ERROR_CODE = 500,
+  CREATED_CODE = 201,
   BAD_REQUEST_CODE = 400,
   UNAUTHORIZED_CODE = 401,
   CONFLICT_CODE = 409,
@@ -22,10 +22,16 @@ export enum ETextResponse {
   BRAND_CREATED = "Brand created",
   BRAND_UPDATED = "Brand updated",
   BRAND_DELETED = "Brand deleted",
+  // Products
+  PRODUCT_ID_NOT_EXISTS = "Product does not exist",
+  PRODUCT_CREATED = "Product created",
+  PRODUCT_UPDATED = "Product updated",
+  PRODUCT_DELETED = "Product deleted",
   // Authentication
   INVALID_AUTH_TOKEN = "Invalid token",
   ACCOUNT_DETAILS_INVALID = "Account details invalid",
   ACCOUNT_TYPE_INVALID = "Incorrect account login",
   ACCOUNT_ALREADY_EXISTS = "Account already exists",
   UNAUTHORIZED_REQUEST = "Account lacks required permissions",
+  ACCOUNT_PASS_UPDATED = "Account password updated",
 }

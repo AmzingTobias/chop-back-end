@@ -5,6 +5,7 @@ import { productTypeRouter } from "./routes/v1/product-types.routes";
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { brandRouter } from "./routes/v1/brands.routes";
+import { productRouter } from "./routes/v1/product.routes";
 import { authRouter } from "./routes/v1/auth.routes";
 import cookieParser from "cookie-parser";
 
@@ -29,6 +30,7 @@ app.use(cookieParser());
 
 // Routes
 app.use("/v1/auth", authRouter);
+app.use("/v1/products", productRouter);
 app.use("/v1/product-types", productTypeRouter);
 app.use("/v1/brands", brandRouter);
 
