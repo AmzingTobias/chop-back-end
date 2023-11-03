@@ -9,6 +9,7 @@ import {
   ETextResponse,
 } from "../../common/response-types";
 import { EDatabaseResponses } from "../../data/data";
+import { EAccountTypes, verifyToken } from "../../security/security";
 
 export const productRouter = Router();
 
@@ -40,7 +41,16 @@ export const productRouter = Router();
  *       500:
  *          description: Internal server error
  */
-productRouter.put("/:id/name", async (req, res) => {
+productRouter.put("/:id/name", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
     res
@@ -105,7 +115,16 @@ productRouter.put("/:id/name", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productRouter.put("/:id/description", async (req, res) => {
+productRouter.put("/:id/description", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
     res
@@ -167,7 +186,16 @@ productRouter.put("/:id/description", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productRouter.delete("/:id/description", async (req, res) => {
+productRouter.delete("/:id/description", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
     res
@@ -225,7 +253,16 @@ productRouter.delete("/:id/description", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productRouter.put("/:id/brand", async (req, res) => {
+productRouter.put("/:id/brand", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
     res
@@ -289,7 +326,16 @@ productRouter.put("/:id/brand", async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productRouter.delete("/:id/brand", async (req, res) => {
+productRouter.delete("/:id/brand", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
     res
