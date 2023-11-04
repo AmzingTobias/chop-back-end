@@ -1,6 +1,8 @@
 import { Router } from "express";
 import {
+  assign_product_types,
   create_new_product,
+  delete_assigned_product_types,
   set_price_for_product,
   update_brand_id,
   update_product_description,
@@ -12,6 +14,7 @@ import {
 } from "../../common/response-types";
 import { EDatabaseResponses } from "../../data/data";
 import { EAccountTypes, verifyToken } from "../../security/security";
+import { isArrayOfNumbers } from "../../common/validation";
 
 export const productRouter = Router();
 
@@ -461,10 +464,7 @@ productRouter.post("/", verifyToken, async (req, res) => {
     (typeof description === "string" ||
       description === undefined ||
       description === null) &&
-    Array.isArray(productTypeIds) &&
-    productTypeIds.every(
-      (possibleNumber) => !Number.isNaN(Number(possibleNumber))
-    )
+    isArrayOfNumbers(productTypeIds)
   ) {
     try {
       const created = await create_new_product(
@@ -568,6 +568,99 @@ productRouter.post("/:id/price", verifyToken, async (req, res) => {
         return res
           .status(EResponseStatusCodes.BAD_REQUEST_CODE)
           .send(ETextResponse.PRODUCT_ID_NOT_EXISTS);
+      default:
+        return res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } catch (_) {
+    return res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
+  }
+});
+
+productRouter.post("/:id/product-types", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  const { "product-type-ids": productTypeIds } = req.body;
+  if (!isArrayOfNumbers(productTypeIds)) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
+  try {
+    const assigned = await assign_product_types(Number(id), productTypeIds);
+    switch (assigned) {
+      case EDatabaseResponses.OK:
+        return res
+          .status(EResponseStatusCodes.CREATED_CODE)
+          .send(ETextResponse.PRODUCT_TYPE_ASSIGNED);
+      case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
+        return res
+          .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+          .send(
+            `${ETextResponse.PRODUCT_ID_NOT_EXISTS} or ${ETextResponse.PRODUCT_TYPE_ID_NOT_EXIST}`
+          );
+      case EDatabaseResponses.CONFLICT:
+        return res
+          .status(EResponseStatusCodes.CONFLICT_CODE)
+          .send(ETextResponse.PRODUCT_TYPE_ALREADY_ASSIGNED);
+      default:
+        return res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } catch (_) {
+    return res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
+  }
+});
+
+productRouter.delete("/:id/product-types", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  const { "product-type-ids": productTypeIds } = req.body;
+  if (!isArrayOfNumbers(productTypeIds)) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
+  try {
+    const deleted = await delete_assigned_product_types(
+      Number(id),
+      productTypeIds
+    );
+    switch (deleted) {
+      case EDatabaseResponses.OK:
+        return res.send(ETextResponse.PRODUCT_TYPE_REMOVED_FROM_PRODUCT);
       default:
         return res
           .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)

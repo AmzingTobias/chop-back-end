@@ -11,6 +11,9 @@ export enum ETextResponse {
   MISSING_FIELD_IN_REQ_BODY = "Missing field in request body",
   ID_INVALID_IN_REQ = "Id invalid",
   // Product types
+  PRODUCT_TYPE_REMOVED_FROM_PRODUCT = "Product type no longer assigned",
+  PRODUCT_TYPE_ASSIGNED = "Product type assigned",
+  PRODUCT_TYPE_ALREADY_ASSIGNED = "Product type already assigned to product",
   PRODUCT_TYPE_ALREADY_EXISTS = "Product type name already exists",
   PRODUCT_TYPE_ID_NOT_EXIST = "Product type does not exist",
   PRODUCT_TYPE_CREATED = "Product type created",

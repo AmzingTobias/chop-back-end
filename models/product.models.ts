@@ -1,6 +1,9 @@
 import { QueryConfig } from "pg";
 import pool, { EDatabaseResponses, ICustomError } from "../data/data";
-import { FOREIGN_KEY_VIOLATION } from "../common/postgresql-error-codes";
+import {
+  FOREIGN_KEY_VIOLATION,
+  UNIQUE_CONSTRAINT_FAILED,
+} from "../common/postgresql-error-codes";
 
 // Type describing the product entry that exists in the database
 export type TProductEntry = {
@@ -158,12 +161,12 @@ export const create_new_product = (
           res.rows[0].id,
           price.toFixed(2),
         ]);
-        productTypeIds.forEach(async (productTypeId) => {
+        for await (const productTypeId of productTypeIds) {
           await client.query(
             "INSERT INTO assigned_product_type(product_id, type_id) VALUES($1, $2)",
             [res.rows[0].id, productTypeId]
           );
-        });
+        }
         await client.query("COMMIT");
         transactionStatus = EDatabaseResponses.OK;
       } catch (err) {
@@ -225,5 +228,103 @@ export const set_price_for_product = (
         }
       }
     );
+  });
+};
+
+/**
+ * Assign product types for a specific product
+ * @param product_id The id of the product to assign the types for
+ * @param product_type_ids_to_delete A list of type ids to assign to the product
+ * @returns EDatabaseResponses.OK if transaction completes.
+ * EDatabaseResponses.FOREIGN_KEY_VIOLATION if either the product id or product type id does not exist,
+ * EDatabaseResponses.CONFLICT if the relationship between the product id and product type already exists.
+ * Rejects on database errors
+ */
+export const assign_product_types = (
+  product_id: number,
+  product_type_ids_to_assign: number[]
+): Promise<EDatabaseResponses> => {
+  return new Promise(async (resolve, reject) => {
+    const assignedProductTypeQuery =
+      "INSERT INTO assigned_product_type(product_id, type_id) VALUES($1, $2)";
+    try {
+      const client = await pool.connect();
+      let transactionStatus: EDatabaseResponses | undefined = undefined;
+      try {
+        await client.query("BEGIN");
+        for await (const type_id of product_type_ids_to_assign) {
+          await client.query(assignedProductTypeQuery, [product_id, type_id]);
+        }
+        await client.query("COMMIT");
+        transactionStatus = EDatabaseResponses.OK;
+      } catch (err) {
+        if ((err as ICustomError).code === FOREIGN_KEY_VIOLATION) {
+          transactionStatus = EDatabaseResponses.FOREIGN_KEY_VIOLATION;
+        } else if ((err as ICustomError).code === UNIQUE_CONSTRAINT_FAILED) {
+          transactionStatus = EDatabaseResponses.CONFLICT;
+        } else {
+          console.error(
+            `${(err as ICustomError).code}: ${(err as ICustomError).message}`
+          );
+        }
+        await client.query("ROLLBACK");
+      } finally {
+        client.release();
+        if (transactionStatus === undefined) {
+          reject();
+        } else {
+          resolve(transactionStatus);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      reject(err);
+    }
+  });
+};
+
+/**
+ * Delete assigned product types for a specific product
+ * @param product_id The id of the product to delete the types for
+ * @param product_type_ids_to_delete A list of type ids to delete for the product
+ * @returns EDatabaseResponses.OK if transaction completes. Rejects on database errors
+ */
+export const delete_assigned_product_types = (
+  product_id: number,
+  product_type_ids_to_delete: number[]
+): Promise<EDatabaseResponses> => {
+  return new Promise(async (resolve, reject) => {
+    const removeAssignedProductTypeQuery =
+      "DELETE FROM assigned_product_type WHERE product_id = $1 AND type_id = $2";
+    try {
+      const client = await pool.connect();
+      let transactionStatus: EDatabaseResponses | undefined = undefined;
+      try {
+        await client.query("BEGIN");
+        for await (const type_id of product_type_ids_to_delete) {
+          await client.query(removeAssignedProductTypeQuery, [
+            product_id,
+            type_id,
+          ]);
+        }
+        await client.query("COMMIT");
+        transactionStatus = EDatabaseResponses.OK;
+      } catch (err) {
+        console.error(
+          `${(err as ICustomError).code}: ${(err as ICustomError).message}`
+        );
+        await client.query("ROLLBACK");
+      } finally {
+        client.release();
+        if (transactionStatus === undefined) {
+          reject();
+        } else {
+          resolve(transactionStatus);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      reject(err);
+    }
   });
 };
