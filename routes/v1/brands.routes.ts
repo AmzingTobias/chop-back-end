@@ -72,6 +72,8 @@ brandRouter.get("/", async (_, res) => {
  *          description: Brand name already in use
  *       400:
  *          description: Brand name missing
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -144,6 +146,8 @@ brandRouter.post("/", verifyToken, async (req, res) => {
  *          description: New brand name already exists
  *       400:
  *          description: Brand Id was invalid, or fields missing from request body
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -217,6 +221,8 @@ brandRouter.put("/:id", verifyToken, async (req, res) => {
  *          description: Brand deleted
  *       400:
  *          description: Brand Id was invalid
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */

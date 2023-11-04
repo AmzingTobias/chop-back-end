@@ -1,5 +1,9 @@
 import { Router } from "express";
 import {
+  assignProductTypes,
+  createNewProduct,
+  deleteAssignedProductTypes,
+  setPriceForProduct,
   updateBrandId,
   updateProductDescription,
   updateProductName,
@@ -10,6 +14,7 @@ import {
 } from "../../common/response-types";
 import { EDatabaseResponses } from "../../data/data";
 import { EAccountTypes, verifyToken } from "../../security/security";
+import { isArrayOfNumbers } from "../../common/validation";
 
 export const productRouter = Router();
 
@@ -38,6 +43,8 @@ export const productRouter = Router();
  *          description: Product's name updated
  *       400:
  *          description: Product does not exist
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -112,6 +119,8 @@ productRouter.put("/:id/name", verifyToken, async (req, res) => {
  *          description: Product's description updated
  *       400:
  *          description: Product does not exist
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -183,6 +192,8 @@ productRouter.put("/:id/description", verifyToken, async (req, res) => {
  *          description: Product's description removed
  *       400:
  *          description: Product does not exist
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -250,6 +261,8 @@ productRouter.delete("/:id/description", verifyToken, async (req, res) => {
  *          description: Product's brand updated
  *       400:
  *          description: Product or brand does not exist
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -323,6 +336,8 @@ productRouter.put("/:id/brand", verifyToken, async (req, res) => {
  *          description: Product's brand removed
  *       400:
  *          description: Product does not exist
+ *       401:
+ *          description: Account lacks required permissions
  *       500:
  *          description: Internal server error
  */
@@ -362,5 +377,364 @@ productRouter.delete("/:id/brand", verifyToken, async (req, res) => {
         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
         .send(ETextResponse.INTERNAL_ERROR);
     }
+  }
+});
+
+/**
+ * @swagger
+ * /products:
+ *   post:
+ *     tags: [Products]
+ *     summary: Create a new product
+ *     description: Create a new product for the store
+ *     parameters:
+ *       - in: body
+ *         name: name
+ *         required: true
+ *         description: The name of the product
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: price
+ *         required: true
+ *         description: The price to list the product with
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: product-type-ids
+ *         required: false
+ *         description: The list of categories this product falls under
+ *         schema:
+ *           type: array
+ *           items:
+ *            type:
+ *              number
+ *       - in: body
+ *         name: brand-id
+ *         required: false
+ *         description: The id of the brand that created this product
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: description
+ *         required: false
+ *         description: The list of categories this product falls under
+ *         schema:
+ *           type: string
+ *     responses:
+ *       201:
+ *          description: Product was created
+ *       400:
+ *          description: Missing fields in request body, or the brand ids / product ids supplied are invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.post("/", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    if (
+      !req.user ||
+      (req.user.accountType !== EAccountTypes.admin &&
+        req.user.accountType !== EAccountTypes.sales)
+    ) {
+      return res
+        .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+        .send(ETextResponse.UNAUTHORIZED_REQUEST);
+    }
+  }
+
+  const {
+    name,
+    price,
+    "product-type-ids": productTypeIds,
+    "brand-id": brandId,
+    description,
+  } = req.body;
+  if (
+    typeof name === "string" &&
+    typeof price === "number" &&
+    (typeof (brandId === "number") ||
+      brandId === undefined ||
+      brandId === null) &&
+    (typeof description === "string" ||
+      description === undefined ||
+      description === null) &&
+    isArrayOfNumbers(productTypeIds)
+  ) {
+    try {
+      const created = await createNewProduct(
+        name,
+        productTypeIds,
+        price,
+        brandId,
+        description
+      );
+      switch (created) {
+        case EDatabaseResponses.OK:
+          res
+            .status(EResponseStatusCodes.CREATED_CODE)
+            .send(ETextResponse.PRODUCT_CREATED);
+          break;
+        case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
+          res
+            .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+            .send(
+              `${ETextResponse.PRODUCT_TYPE_ID_NOT_EXIST} or ${ETextResponse.BRAND_ID_NOT_EXIST}`
+            );
+          break;
+        default:
+          res
+            .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+            .send(ETextResponse.INTERNAL_ERROR);
+          break;
+      }
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } else {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
+});
+
+/**
+ * @swagger
+ * /products/{id}/price:
+ *   post:
+ *     tags: [Products]
+ *     summary: Set a new price for the product
+ *     description: Set a new price for an existing product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The product id to set the price for
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: price
+ *         required: true
+ *         description: The price for the product
+ *         schema:
+ *           type: number
+ *     responses:
+ *       201:
+ *          description: Product price was set
+ *       400:
+ *          description: Missing fields in request body, or the product id was invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.post("/:id/price", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  const { price } = req.body;
+  if (typeof price !== "number") {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
+  try {
+    const priceSet = await setPriceForProduct(Number(id), price);
+    switch (priceSet) {
+      case EDatabaseResponses.OK:
+        return res
+          .status(EResponseStatusCodes.CREATED_CODE)
+          .send(ETextResponse.PRODUCT_PRICE_SET);
+      case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
+        return res
+          .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+          .send(ETextResponse.PRODUCT_ID_NOT_EXISTS);
+      default:
+        return res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } catch (_) {
+    return res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
+  }
+});
+
+/**
+ * @swagger
+ * /products/{id}/product-types:
+ *   post:
+ *     tags: [Products, Product types]
+ *     summary: Assign new product types to a product
+ *     description: Assign multiple new product types to an existing product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The product id to assign the product types to
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: product-type-ids
+ *         required: true
+ *         description: A list of product types to assign to the product
+ *         schema:
+ *           type: array
+ *           items:
+ *            type:
+ *              number
+ *     responses:
+ *       201:
+ *          description: Product types were assigned
+ *       400:
+ *          description: Missing fields in request body, or the product id / type id was invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.post("/:id/product-types", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  const { "product-type-ids": productTypeIds } = req.body;
+  if (!isArrayOfNumbers(productTypeIds)) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
+  try {
+    const assigned = await assignProductTypes(Number(id), productTypeIds);
+    switch (assigned) {
+      case EDatabaseResponses.OK:
+        return res
+          .status(EResponseStatusCodes.CREATED_CODE)
+          .send(ETextResponse.PRODUCT_TYPE_ASSIGNED);
+      case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
+        return res
+          .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+          .send(
+            `${ETextResponse.PRODUCT_ID_NOT_EXISTS} or ${ETextResponse.PRODUCT_TYPE_ID_NOT_EXIST}`
+          );
+      case EDatabaseResponses.CONFLICT:
+        return res
+          .status(EResponseStatusCodes.CONFLICT_CODE)
+          .send(ETextResponse.PRODUCT_TYPE_ALREADY_ASSIGNED);
+      default:
+        return res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } catch (_) {
+    return res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
+  }
+});
+
+/**
+ * @swagger
+ * /products/{id}/product-types:
+ *   delete:
+ *     tags: [Products, Product types]
+ *     summary: Unassign product types from a product
+ *     description: Unassign multiple product types from an existing product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The product id to remove the product types from
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: product-type-ids
+ *         required: true
+ *         description: A list of product types to remove from the product
+ *         schema:
+ *           type: array
+ *           items:
+ *            type:
+ *              number
+ *     responses:
+ *       201:
+ *          description: Product types were removed
+ *       400:
+ *          description: Missing fields in request body, or the product id was invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.delete("/:id/product-types", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  const { "product-type-ids": productTypeIds } = req.body;
+  if (!isArrayOfNumbers(productTypeIds)) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
+  try {
+    const deleted = await deleteAssignedProductTypes(
+      Number(id),
+      productTypeIds
+    );
+    switch (deleted) {
+      case EDatabaseResponses.OK:
+        return res.send(ETextResponse.PRODUCT_TYPE_REMOVED_FROM_PRODUCT);
+      default:
+        return res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } catch (_) {
+    return res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
   }
 });
