@@ -5,19 +5,19 @@ import {
   UNIQUE_CONSTRAINT_FAILED,
 } from "../common/postgresql-error-codes";
 
-// Type describing the product entry that exists in the database
-export type TProductEntry = {
-  // The name of the product
+export interface IBaseProductEntry {
+  id: number;
   name: string;
-  // If the product is available
-  available?: boolean;
-  // The date the product was created on
-  created_on?: Date;
-  // The Id of the brand (if exists) the product is tied to
-  brand_id: number | null;
-  // The description of the product, if one exists
-  description: string | null;
-};
+  available: boolean;
+  stock_count: number;
+  price: number;
+}
+
+export interface IProductEntry extends IBaseProductEntry {
+  brandName: string;
+  brandId: number;
+  description: string;
+}
 
 /**
  * Update a product's name
@@ -326,5 +326,147 @@ export const deleteAssignedProductTypes = (
       console.error(err);
       reject(err);
     }
+  });
+};
+
+/**
+ * Get a detailed list of all products that are of a certain type
+ * @param productTypeId The id of the type to get all the products for
+ * @returns A list of TProductForProductTypeEntry. Rejects on database errors
+ */
+export const getProductsByType = (
+  productTypeId: number
+): Promise<IBaseProductEntry[]> => {
+  return new Promise((resolve, reject) => {
+    const getProductsForTypeQuery = `
+    WITH LatestPrice AS (
+      SELECT
+          product_id,
+          MAX(date_active_from) AS max_date
+      FROM
+          product_prices
+      GROUP BY
+          product_id
+    )
+    SELECT 
+        products.id AS "id", 
+        products.name AS "name", 
+        products.available, 
+        product_stock_levels.amount AS "stock_count", 
+        product_prices.price::money::numeric::float8
+    FROM products
+        JOIN product_prices ON products.id = product_prices.product_id
+        JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
+        JOIN assigned_product_type ON products.id = assigned_product_type.product_id
+        JOIN product_stock_levels ON products.id = product_stock_levels.product_id
+    WHERE assigned_product_type.type_id = $1
+    `;
+    pool.query(
+      getProductsForTypeQuery,
+      [productTypeId],
+      (err: ICustomError, res) => {
+        if (err) {
+          console.error(`${err.code}: ${err.message}`);
+          reject(err);
+        } else {
+          resolve(res.rows as IBaseProductEntry[]);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get all products for a specific brand
+ * @param brandId The id of the brand to get the products for
+ * @returns A list of IBaseProductEntry. Rejects on database errors
+ */
+export const getProductsByBrand = (
+  brandId: number
+): Promise<IBaseProductEntry[]> => {
+  return new Promise((resolve, reject) => {
+    const getProductsForTypeQuery = `
+    WITH LatestPrice AS (
+      SELECT
+          product_id,
+          MAX(date_active_from) AS max_date
+      FROM
+          product_prices
+      GROUP BY
+          product_id
+    )
+    SELECT 
+        products.id AS "id", 
+        products.name AS "name", 
+        products.available, 
+        product_stock_levels.amount AS "stock_count", 
+        product_prices.price::money::numeric::float8
+    FROM products
+        JOIN product_prices ON products.id = product_prices.product_id
+        JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
+        JOIN assigned_product_type ON products.id = assigned_product_type.product_id
+        JOIN product_stock_levels ON products.id = product_stock_levels.product_id
+    WHERE products.brand_id = $1
+    `;
+    pool.query(getProductsForTypeQuery, [brandId], (err: ICustomError, res) => {
+      if (err) {
+        console.error(`${err.code}: ${err.message}`);
+        reject(err);
+      } else {
+        resolve(res.rows as IBaseProductEntry[]);
+      }
+    });
+  });
+};
+
+/**
+ * Get a detailed list of all products that are of a certain type
+ * @param productId The id of the product to get the info for
+ * @returns A list of TDetailedProductEntry. Rejects on database errors
+ */
+export const getDetailedProductInfo = (
+  productId: number
+): Promise<IProductEntry[]> => {
+  return new Promise((resolve, reject) => {
+    const getProductsForTypeQuery = `
+    WITH LatestPrice AS (
+      SELECT
+          product_id,
+          MAX(date_active_from) AS max_date
+      FROM
+          product_prices
+      GROUP BY
+          product_id
+    )
+    SELECT
+        products.id AS "id",
+        products.name AS "name",
+        products.available,
+        COALESCE(brands.name, '') AS "brand_name",
+        brands.id AS "brand_id",
+        product_stock_levels.amount AS "stock_count",
+        product_prices.price::money::numeric::float8,
+        products.description
+    FROM products
+        JOIN product_prices ON products.id = product_prices.product_id
+        JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
+        JOIN assigned_product_type ON products.id = assigned_product_type.product_id
+        JOIN product_stock_levels ON products.id = product_stock_levels.product_id
+        LEFT JOIN brands ON products.brand_id = brands.id
+    WHERE products.id = $1
+  
+    `;
+    pool.query(
+      getProductsForTypeQuery,
+      [productId],
+      (err: ICustomError, res) => {
+        if (err) {
+          console.error(`${err.code}: ${err.message}`);
+          reject(err);
+        } else {
+          resolve(res.rows as IProductEntry[]);
+        }
+      }
+    );
   });
 };

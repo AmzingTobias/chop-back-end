@@ -3,6 +3,7 @@ import {
   assignProductTypes,
   createNewProduct,
   deleteAssignedProductTypes,
+  getDetailedProductInfo,
   setPriceForProduct,
   updateBrandId,
   updateProductDescription,
@@ -17,6 +18,67 @@ import { EAccountTypes, verifyToken } from "../../security/security";
 import { isArrayOfNumbers } from "../../common/validation";
 
 export const productRouter = Router();
+
+/**
+ * @swagger
+ * /products/{id}:
+ *   get:
+ *     tags: [Products]
+ *     summary: Retrieve information regarding a specific product
+ *     description: Retrieve detailed information regarding a specific product.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product to get the information for
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: An object with details of the products.
+ *         schema:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               description: The id of the product.
+ *             name:
+ *               type: string
+ *               description: The name of the product.
+ *             available:
+ *               type: boolean
+ *               description: If the product is available to be purchased.
+ *             stock_count:
+ *               type: number
+ *               description: The stock count for the product.
+ *             price:
+ *               type: number
+ *               description: The price for the product.
+ *             brandName:
+ *               type: string
+ *               description: The name of the brand for the product, if one exists.
+ *             brandId:
+ *               type: number | null
+ *               description: The id of the brand the product belongs to, null otherwise.
+ *             description:
+ *               type: string | null
+ *               description: A description about the product if one exists, null otherwise.
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  if (!Number.isNaN(Number(id))) {
+    try {
+      const products = await getDetailedProductInfo(Number(id));
+      return res.json(products);
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    }
+  }
+});
 
 /**
  * @swagger

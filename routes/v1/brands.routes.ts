@@ -11,6 +11,7 @@ import {
 } from "../../common/response-types";
 import { EDatabaseResponses } from "../../data/data";
 import { EAccountTypes, verifyToken } from "../../security/security";
+import { getProductsByBrand } from "../../models/product.models";
 
 export const brandRouter = Router();
 
@@ -259,5 +260,59 @@ brandRouter.delete("/:id", verifyToken, async (req, res) => {
     res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+});
+
+/**
+ * @swagger
+ * /product-types/{id}/products:
+ *   get:
+ *     tags: [Product types, Products]
+ *     summary: Retrieve a list of products that are assigned to a type
+ *     description: Retrieve a list of products assigned to a given product type.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product type to get the products for
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: A list of products.
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: The id of the product.
+ *               name:
+ *                 type: string
+ *                 description: The name of the product.
+ *               available:
+ *                 type: boolean
+ *                 description: If the product is available to be purchased.
+ *               stock_count:
+ *                 type: number
+ *                 description: The stock count for the product.
+ *               price:
+ *                 type: number
+ *                 description: The price for the product.
+ *       500:
+ *          description: Internal server error
+ */
+brandRouter.get("/:id/products", async (req, res) => {
+  const { id } = req.params;
+  if (!Number.isNaN(Number(id))) {
+    try {
+      const products = await getProductsByBrand(Number(id));
+      return res.json(products);
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    }
   }
 });
