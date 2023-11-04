@@ -24,7 +24,7 @@ export type TProductEntry = {
  * EDatabaseResponses.DOES_NOT_EXIST if the product does not exist.
  * Rejects on database errors
  */
-export const updateProductName = (
+export const update_product_name = (
   productId: number,
   newName: string
 ): Promise<EDatabaseResponses> => {
@@ -56,7 +56,7 @@ export const updateProductName = (
  * EDatabaseResponses.DOES_NOT_EXIST if the product does not exist.
  * Rejects on database errors
  */
-export const updateProductDescription = (
+export const update_product_description = (
   productId: number,
   newDescription: string | null
 ): Promise<EDatabaseResponses> => {
@@ -89,7 +89,7 @@ export const updateProductDescription = (
  * EDatabaseResponse.FOREIGN_KEY_VIOLATION if the brand id is not valid
  * Rejects on database errors
  */
-export const updateBrandId = (
+export const update_brand_id = (
   productId: number,
   newBrandId: number | null
 ): Promise<EDatabaseResponses> => {
@@ -129,7 +129,7 @@ export const updateBrandId = (
  * type ids or brand ids are invalid.
  * Rejects on database errors
  */
-export const createNewProduct = (
+export const create_new_product = (
   productName: string,
   productTypeIds: number[],
   price: number,
@@ -141,7 +141,7 @@ export const createNewProduct = (
       const client = await pool.connect();
       let transactionStatus: EDatabaseResponses | undefined = undefined;
       try {
-        client.query("BEGIN");
+        await client.query("BEGIN");
         const createProductQuery =
           "INSERT INTO products(name, brand_id, description) VALUES ($1, $2, $3) RETURNING id";
         const res = await client.query(createProductQuery, [
@@ -198,7 +198,7 @@ export const createNewProduct = (
  * EDatabaseResponses.FOREIGN_KEY_VIOLATION if the product id does not exist,
  * EDatabaseResponses.DOES_NOT_EXIST shouldn't be returned. Rejects on database errors
  */
-export const setPriceForProduct = (
+export const set_price_for_product = (
   product_id: number,
   price: number
 ): Promise<EDatabaseResponses> => {

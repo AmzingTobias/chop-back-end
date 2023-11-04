@@ -1,10 +1,10 @@
 import { Router } from "express";
 import {
-  createNewProduct,
-  setPriceForProduct,
-  updateBrandId,
-  updateProductDescription,
-  updateProductName,
+  create_new_product,
+  set_price_for_product,
+  update_brand_id,
+  update_product_description,
+  update_product_name,
 } from "../../models/product.models";
 import {
   EResponseStatusCodes,
@@ -64,7 +64,7 @@ productRouter.put("/:id/name", verifyToken, async (req, res) => {
     const { name } = req.body;
     if (typeof name === "string") {
       try {
-        const updated = await updateProductName(Number(id), name.trim());
+        const updated = await update_product_name(Number(id), name.trim());
         switch (updated) {
           case EDatabaseResponses.OK:
             res.send(ETextResponse.PRODUCT_UPDATED);
@@ -140,7 +140,7 @@ productRouter.put("/:id/description", verifyToken, async (req, res) => {
     const { description } = req.body;
     if (typeof description === "string") {
       try {
-        const updated = await updateProductDescription(
+        const updated = await update_product_description(
           Number(id),
           description.trim()
         );
@@ -211,7 +211,7 @@ productRouter.delete("/:id/description", verifyToken, async (req, res) => {
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
     try {
-      const updated = await updateProductDescription(Number(id), null);
+      const updated = await update_product_description(Number(id), null);
       switch (updated) {
         case EDatabaseResponses.OK:
           res.send(ETextResponse.PRODUCT_UPDATED);
@@ -282,7 +282,7 @@ productRouter.put("/:id/brand", verifyToken, async (req, res) => {
     const { "brand-id": brandId } = req.body;
     if (typeof brandId === "number") {
       try {
-        const updated = await updateBrandId(Number(id), brandId);
+        const updated = await update_brand_id(Number(id), brandId);
         switch (updated) {
           case EDatabaseResponses.OK:
             res.send(ETextResponse.PRODUCT_UPDATED);
@@ -355,7 +355,7 @@ productRouter.delete("/:id/brand", verifyToken, async (req, res) => {
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
     try {
-      const deleted = await updateBrandId(Number(id), null);
+      const deleted = await update_brand_id(Number(id), null);
       switch (deleted) {
         case EDatabaseResponses.OK:
           res.send(ETextResponse.BRAND_DELETED);
@@ -467,7 +467,7 @@ productRouter.post("/", verifyToken, async (req, res) => {
     )
   ) {
     try {
-      const created = await createNewProduct(
+      const created = await create_new_product(
         name,
         productTypeIds,
         price,
@@ -558,7 +558,7 @@ productRouter.post("/:id/price", verifyToken, async (req, res) => {
       .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   }
   try {
-    const priceSet = await setPriceForProduct(Number(id), price);
+    const priceSet = await set_price_for_product(Number(id), price);
     switch (priceSet) {
       case EDatabaseResponses.OK:
         return res
