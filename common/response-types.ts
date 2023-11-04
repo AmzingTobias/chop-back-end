@@ -27,6 +27,7 @@ export enum ETextResponse {
   PRODUCT_CREATED = "Product created",
   PRODUCT_UPDATED = "Product updated",
   PRODUCT_DELETED = "Product deleted",
+  PRODUCT_PRICE_SET = "Product price set",
   // Authentication
   INVALID_AUTH_TOKEN = "Invalid token",
   ACCOUNT_DETAILS_INVALID = "Account details invalid",

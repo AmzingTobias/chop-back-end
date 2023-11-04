@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createNewProduct,
+  setPriceForProduct,
   updateBrandId,
   updateProductDescription,
   updateProductName,
@@ -501,5 +502,80 @@ productRouter.post("/", verifyToken, async (req, res) => {
     res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
+});
+
+/**
+ * @swagger
+ * /{id}/price:
+ *   post:
+ *     tags: [Products]
+ *     summary: Set a new price for the product
+ *     description: Set a new price for an existing product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The product id to set the price for
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: price
+ *         required: true
+ *         description: The price for the product
+ *         schema:
+ *           type: number
+ *     responses:
+ *       201:
+ *          description: Product price was set
+ *       400:
+ *          description: Missing fields in request body, or the product id was invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.post("/:id/price", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  const { price } = req.body;
+  if (typeof price !== "number") {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
+  try {
+    const priceSet = await setPriceForProduct(Number(id), price);
+    switch (priceSet) {
+      case EDatabaseResponses.OK:
+        return res
+          .status(EResponseStatusCodes.CREATED_CODE)
+          .send(ETextResponse.PRODUCT_PRICE_SET);
+      case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
+        return res
+          .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+          .send(ETextResponse.PRODUCT_ID_NOT_EXISTS);
+      default:
+        return res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } catch (_) {
+    return res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
   }
 });

@@ -189,3 +189,41 @@ export const createNewProduct = (
     }
   });
 };
+
+/**
+ * Set a new price for a product, or update the price for the current day
+ * @param product_id The id of the proudct to set the price for
+ * @param price The price for the product
+ * @returns EDatabaseResponses.OK if the price is inserted / updated succesfully,
+ * EDatabaseResponses.FOREIGN_KEY_VIOLATION if the product id does not exist,
+ * EDatabaseResponses.DOES_NOT_EXIST shouldn't be returned. Rejects on database errors
+ */
+export const setPriceForProduct = (
+  product_id: number,
+  price: number
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    const setPriceQuery =
+      "INSERT INTO product_prices(product_id, price) VALUES ($1, $2) ON CONFLICT (product_id, date_active_from) DO UPDATE SET price=excluded.price";
+    pool.query(
+      setPriceQuery,
+      [product_id, price.toFixed(2)],
+      (err: ICustomError, res) => {
+        if (err) {
+          if (err.code === FOREIGN_KEY_VIOLATION) {
+            resolve(EDatabaseResponses.FOREIGN_KEY_VIOLATION);
+          } else {
+            console.error(`${err.code}: ${err.message}`);
+            reject(err);
+          }
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};
