@@ -27,7 +27,7 @@ export type TProductEntry = {
  * EDatabaseResponses.DOES_NOT_EXIST if the product does not exist.
  * Rejects on database errors
  */
-export const update_product_name = (
+export const updateProductName = (
   productId: number,
   newName: string
 ): Promise<EDatabaseResponses> => {
@@ -59,7 +59,7 @@ export const update_product_name = (
  * EDatabaseResponses.DOES_NOT_EXIST if the product does not exist.
  * Rejects on database errors
  */
-export const update_product_description = (
+export const updateProductDescription = (
   productId: number,
   newDescription: string | null
 ): Promise<EDatabaseResponses> => {
@@ -92,7 +92,7 @@ export const update_product_description = (
  * EDatabaseResponse.FOREIGN_KEY_VIOLATION if the brand id is not valid
  * Rejects on database errors
  */
-export const update_brand_id = (
+export const updateBrandId = (
   productId: number,
   newBrandId: number | null
 ): Promise<EDatabaseResponses> => {
@@ -132,7 +132,7 @@ export const update_brand_id = (
  * type ids or brand ids are invalid.
  * Rejects on database errors
  */
-export const create_new_product = (
+export const createNewProduct = (
   productName: string,
   productTypeIds: number[],
   price: number,
@@ -195,14 +195,14 @@ export const create_new_product = (
 
 /**
  * Set a new price for a product, or update the price for the current day
- * @param product_id The id of the proudct to set the price for
+ * @param productId The id of the proudct to set the price for
  * @param price The price for the product
  * @returns EDatabaseResponses.OK if the price is inserted / updated succesfully,
  * EDatabaseResponses.FOREIGN_KEY_VIOLATION if the product id does not exist,
  * EDatabaseResponses.DOES_NOT_EXIST shouldn't be returned. Rejects on database errors
  */
-export const set_price_for_product = (
-  product_id: number,
+export const setPriceForProduct = (
+  productId: number,
   price: number
 ): Promise<EDatabaseResponses> => {
   return new Promise((resolve, reject) => {
@@ -210,7 +210,7 @@ export const set_price_for_product = (
       "INSERT INTO product_prices(product_id, price) VALUES ($1, $2) ON CONFLICT (product_id, date_active_from) DO UPDATE SET price=excluded.price";
     pool.query(
       setPriceQuery,
-      [product_id, price.toFixed(2)],
+      [productId, price.toFixed(2)],
       (err: ICustomError, res) => {
         if (err) {
           if (err.code === FOREIGN_KEY_VIOLATION) {
@@ -233,16 +233,16 @@ export const set_price_for_product = (
 
 /**
  * Assign product types for a specific product
- * @param product_id The id of the product to assign the types for
+ * @param productId The id of the product to assign the types for
  * @param product_type_ids_to_delete A list of type ids to assign to the product
  * @returns EDatabaseResponses.OK if transaction completes.
  * EDatabaseResponses.FOREIGN_KEY_VIOLATION if either the product id or product type id does not exist,
  * EDatabaseResponses.CONFLICT if the relationship between the product id and product type already exists.
  * Rejects on database errors
  */
-export const assign_product_types = (
-  product_id: number,
-  product_type_ids_to_assign: number[]
+export const assignProductTypes = (
+  productId: number,
+  productTypeIdsToAssign: number[]
 ): Promise<EDatabaseResponses> => {
   return new Promise(async (resolve, reject) => {
     const assignedProductTypeQuery =
@@ -252,8 +252,8 @@ export const assign_product_types = (
       let transactionStatus: EDatabaseResponses | undefined = undefined;
       try {
         await client.query("BEGIN");
-        for await (const type_id of product_type_ids_to_assign) {
-          await client.query(assignedProductTypeQuery, [product_id, type_id]);
+        for await (const type_id of productTypeIdsToAssign) {
+          await client.query(assignedProductTypeQuery, [productId, type_id]);
         }
         await client.query("COMMIT");
         transactionStatus = EDatabaseResponses.OK;
@@ -285,13 +285,13 @@ export const assign_product_types = (
 
 /**
  * Delete assigned product types for a specific product
- * @param product_id The id of the product to delete the types for
- * @param product_type_ids_to_delete A list of type ids to delete for the product
+ * @param productId The id of the product to delete the types for
+ * @param productTypeIdsToDelete A list of type ids to delete for the product
  * @returns EDatabaseResponses.OK if transaction completes. Rejects on database errors
  */
-export const delete_assigned_product_types = (
-  product_id: number,
-  product_type_ids_to_delete: number[]
+export const deleteAssignedProductTypes = (
+  productId: number,
+  productTypeIdsToDelete: number[]
 ): Promise<EDatabaseResponses> => {
   return new Promise(async (resolve, reject) => {
     const removeAssignedProductTypeQuery =
@@ -301,9 +301,9 @@ export const delete_assigned_product_types = (
       let transactionStatus: EDatabaseResponses | undefined = undefined;
       try {
         await client.query("BEGIN");
-        for await (const type_id of product_type_ids_to_delete) {
+        for await (const type_id of productTypeIdsToDelete) {
           await client.query(removeAssignedProductTypeQuery, [
-            product_id,
+            productId,
             type_id,
           ]);
         }

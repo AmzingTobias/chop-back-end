@@ -1,12 +1,12 @@
 import { Router } from "express";
 import {
-  assign_product_types,
-  create_new_product,
-  delete_assigned_product_types,
-  set_price_for_product,
-  update_brand_id,
-  update_product_description,
-  update_product_name,
+  assignProductTypes,
+  createNewProduct,
+  deleteAssignedProductTypes,
+  setPriceForProduct,
+  updateBrandId,
+  updateProductDescription,
+  updateProductName,
 } from "../../models/product.models";
 import {
   EResponseStatusCodes,
@@ -67,7 +67,7 @@ productRouter.put("/:id/name", verifyToken, async (req, res) => {
     const { name } = req.body;
     if (typeof name === "string") {
       try {
-        const updated = await update_product_name(Number(id), name.trim());
+        const updated = await updateProductName(Number(id), name.trim());
         switch (updated) {
           case EDatabaseResponses.OK:
             res.send(ETextResponse.PRODUCT_UPDATED);
@@ -143,7 +143,7 @@ productRouter.put("/:id/description", verifyToken, async (req, res) => {
     const { description } = req.body;
     if (typeof description === "string") {
       try {
-        const updated = await update_product_description(
+        const updated = await updateProductDescription(
           Number(id),
           description.trim()
         );
@@ -214,7 +214,7 @@ productRouter.delete("/:id/description", verifyToken, async (req, res) => {
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
     try {
-      const updated = await update_product_description(Number(id), null);
+      const updated = await updateProductDescription(Number(id), null);
       switch (updated) {
         case EDatabaseResponses.OK:
           res.send(ETextResponse.PRODUCT_UPDATED);
@@ -285,7 +285,7 @@ productRouter.put("/:id/brand", verifyToken, async (req, res) => {
     const { "brand-id": brandId } = req.body;
     if (typeof brandId === "number") {
       try {
-        const updated = await update_brand_id(Number(id), brandId);
+        const updated = await updateBrandId(Number(id), brandId);
         switch (updated) {
           case EDatabaseResponses.OK:
             res.send(ETextResponse.PRODUCT_UPDATED);
@@ -358,7 +358,7 @@ productRouter.delete("/:id/brand", verifyToken, async (req, res) => {
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
     try {
-      const deleted = await update_brand_id(Number(id), null);
+      const deleted = await updateBrandId(Number(id), null);
       switch (deleted) {
         case EDatabaseResponses.OK:
           res.send(ETextResponse.BRAND_DELETED);
@@ -467,7 +467,7 @@ productRouter.post("/", verifyToken, async (req, res) => {
     isArrayOfNumbers(productTypeIds)
   ) {
     try {
-      const created = await create_new_product(
+      const created = await createNewProduct(
         name,
         productTypeIds,
         price,
@@ -507,7 +507,7 @@ productRouter.post("/", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /{id}/price:
+ * /products/{id}/price:
  *   post:
  *     tags: [Products]
  *     summary: Set a new price for the product
@@ -558,7 +558,7 @@ productRouter.post("/:id/price", verifyToken, async (req, res) => {
       .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   }
   try {
-    const priceSet = await set_price_for_product(Number(id), price);
+    const priceSet = await setPriceForProduct(Number(id), price);
     switch (priceSet) {
       case EDatabaseResponses.OK:
         return res
@@ -580,6 +580,39 @@ productRouter.post("/:id/price", verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /products/{id}/product-types:
+ *   post:
+ *     tags: [Products, Product types]
+ *     summary: Assign new product types to a product
+ *     description: Assign multiple new product types to an existing product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The product id to assign the product types to
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: product-type-ids
+ *         required: true
+ *         description: A list of product types to assign to the product
+ *         schema:
+ *           type: array
+ *           items:
+ *            type:
+ *              number
+ *     responses:
+ *       201:
+ *          description: Product types were assigned
+ *       400:
+ *          description: Missing fields in request body, or the product id / type id was invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
 productRouter.post("/:id/product-types", verifyToken, async (req, res) => {
   if (
     !req.user ||
@@ -603,7 +636,7 @@ productRouter.post("/:id/product-types", verifyToken, async (req, res) => {
       .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   }
   try {
-    const assigned = await assign_product_types(Number(id), productTypeIds);
+    const assigned = await assignProductTypes(Number(id), productTypeIds);
     switch (assigned) {
       case EDatabaseResponses.OK:
         return res
@@ -631,6 +664,39 @@ productRouter.post("/:id/product-types", verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /products/{id}/product-types:
+ *   delete:
+ *     tags: [Products, Product types]
+ *     summary: Unassign product types from a product
+ *     description: Unassign multiple product types from an existing product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The product id to remove the product types from
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: product-type-ids
+ *         required: true
+ *         description: A list of product types to remove from the product
+ *         schema:
+ *           type: array
+ *           items:
+ *            type:
+ *              number
+ *     responses:
+ *       201:
+ *          description: Product types were removed
+ *       400:
+ *          description: Missing fields in request body, or the product id was invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
 productRouter.delete("/:id/product-types", verifyToken, async (req, res) => {
   if (
     !req.user ||
@@ -654,7 +720,7 @@ productRouter.delete("/:id/product-types", verifyToken, async (req, res) => {
       .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   }
   try {
-    const deleted = await delete_assigned_product_types(
+    const deleted = await deleteAssignedProductTypes(
       Number(id),
       productTypeIds
     );
