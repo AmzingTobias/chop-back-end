@@ -41,4 +41,6 @@ export enum ETextResponse {
   // Files
   INVALID_FILE_TYPE = "Invalid file type",
   FILE_UPLOADED = "File uploaded",
+  FILE_REMOVED = "File removed",
+  FILE_ID_NOT_VALID = "File id not valid",
 }

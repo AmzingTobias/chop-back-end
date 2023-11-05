@@ -1,3 +1,5 @@
+import path from "path";
+import { deleteSavedFile } from "../common/image";
 import {
   FOREIGN_KEY_VIOLATION,
   UNIQUE_CONSTRAINT_FAILED,
@@ -30,6 +32,50 @@ export const addImageForProduct = (productId: number, imagePath: string) => {
           }
         } else {
           resolve(EDatabaseResponses.OK);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Delete an image from the image products table
+ * @param imageId The id of the image to delete
+ * @returns EDatabaseResponse.OK if the image is deleted from the database, and should be deleted locally as well,
+ * EDatabaseResponse.DOES_NOT_EXIST if the image doesn't exist to delete.
+ * Rejects on database errors
+ */
+export const deleteImageForProduct = (
+  imageId: number
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "DELETE FROM product_images WHERE id = $1 RETURNING source, product_id",
+      [imageId],
+      (err: ICustomError, res) => {
+        if (err) {
+          console.error(`${err.code}: ${err.message}`);
+          reject(err);
+        } else {
+          if (res.rowCount > 0) {
+            deleteSavedFile(
+              path.join(
+                __dirname,
+                `../product-images/${res.rows[0].product_id}/${res.rows[0].source}`
+              )
+            )
+              .then(() => {
+                resolve(EDatabaseResponses.OK);
+              })
+              .catch(() => {
+                console.error(
+                  `Image: ${res.rows[0].source} deleted on server but not locally`
+                );
+                resolve(EDatabaseResponses.OK);
+              });
+          } else {
+            resolve(EDatabaseResponses.DOES_NOT_EXIST);
+          }
         }
       }
     );

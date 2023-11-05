@@ -6,7 +6,10 @@ import {
   EResponseStatusCodes,
   ETextResponse,
 } from "../../common/response-types";
-import { addImageForProduct } from "../../models/images.models";
+import {
+  addImageForProduct,
+  deleteImageForProduct,
+} from "../../models/images.models";
 import { EDatabaseResponses } from "../../data/data";
 import { deleteSavedFile } from "../../common/image";
 import { EAccountTypes, verifyToken } from "../../security/security";
@@ -67,7 +70,7 @@ export const imageRouter = Router();
  *         schema:
  *           type: file
  *     responses:
- *       200:
+ *       201:
  *         description: Image was uploaded for the product
  *       409:
  *          description: Should not occur
@@ -153,4 +156,64 @@ imageRouter.post("/product/:id", verifyToken, (req, res) => {
       }
     }
   });
+});
+
+/**
+ * @swagger
+ * /images/product:
+ *   delete:
+ *     tags: [Products, Images]
+ *     summary: Delete an image for a product
+ *     description: Delete an image for a product using the image id.
+ *     parameters:
+ *       - in: body
+ *         name: image-id
+ *         required: true
+ *         description: The id of the image to remove
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Image was deleted
+ *       400:
+ *          description: Missing required fields, or image id is not valid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+imageRouter.delete("/product", verifyToken, async (req, res) => {
+  // Validate permissions
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { "image-id": imageId } = req.body;
+  if (typeof imageId !== "number") {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
+  try {
+    const deleted = await deleteImageForProduct(imageId);
+    switch (deleted) {
+      case EDatabaseResponses.OK:
+        return res.send(ETextResponse.FILE_REMOVED);
+      case EDatabaseResponses.DOES_NOT_EXIST:
+        return res
+          .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+          .send(ETextResponse.FILE_ID_NOT_VALID);
+      default:
+        return res.status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    }
+  } catch (_) {
+    res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
+  }
 });
