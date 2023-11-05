@@ -160,14 +160,14 @@ imageRouter.post("/product/:id", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /images/product:
+ * /images/product/{id}:
  *   delete:
  *     tags: [Products, Images]
  *     summary: Delete an image for a product
  *     description: Delete an image for a product using the image id.
  *     parameters:
- *       - in: body
- *         name: image-id
+ *       - in: path
+ *         name: id
  *         required: true
  *         description: The id of the image to remove
  *         schema:
@@ -182,7 +182,7 @@ imageRouter.post("/product/:id", verifyToken, (req, res) => {
  *       500:
  *          description: Internal server error
  */
-imageRouter.delete("/product", verifyToken, async (req, res) => {
+imageRouter.delete("/product/:id", verifyToken, async (req, res) => {
   // Validate permissions
   if (
     !req.user ||
@@ -193,14 +193,14 @@ imageRouter.delete("/product", verifyToken, async (req, res) => {
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
       .send(ETextResponse.UNAUTHORIZED_REQUEST);
   }
-  const { "image-id": imageId } = req.body;
-  if (typeof imageId !== "number") {
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
     return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
-      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+      .send(ETextResponse.ID_INVALID_IN_REQ);
   }
   try {
-    const deleted = await deleteImageForProduct(imageId);
+    const deleted = await deleteImageForProduct(Number(id));
     switch (deleted) {
       case EDatabaseResponses.OK:
         return res.send(ETextResponse.FILE_REMOVED);
