@@ -110,3 +110,57 @@ export const getImagesForProduct = (
     );
   });
 };
+
+/**
+ * Set the sort order for a list of images for a product. The sort order is based on the index the image ids appear in
+ * @param productId The id of the proudct to set the sort order for
+ * @param imageIds The list of image ids to set the sort order for
+ * @returns EDatabaseResponses.OK if the image order is updated,
+ * EDatabaseResponses.DOES_NOT_EXIST if an image id or product id does not exist.
+ * Rejects on database errors
+ */
+export const setImageSortOrderForProduct = (
+  productId: number,
+  imageIds: number[]
+): Promise<EDatabaseResponses> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const client = await pool.connect();
+      let transactionStatus: EDatabaseResponses | undefined = undefined;
+      try {
+        await client.query("BEGIN");
+        for (let index = 0; index < imageIds.length; index++) {
+          const imageId = imageIds[index];
+          const res = await client.query(
+            "UPDATE product_images SET sort_position = $1 WHERE product_id = $2 AND id = $3",
+            [index, productId, imageId]
+          );
+          if (res.rowCount == 0) {
+            throw new Error("Image Id or product Id invalid");
+          }
+        }
+        await client.query("COMMIT");
+        transactionStatus = EDatabaseResponses.OK;
+      } catch (err) {
+        if ((err as Error).message === "Image Id or product Id invalid") {
+          transactionStatus = EDatabaseResponses.DOES_NOT_EXIST;
+        } else {
+          console.error(
+            `${(err as ICustomError).code}: ${(err as ICustomError).message}`
+          );
+        }
+        await client.query("ROLLBACK");
+      } finally {
+        client.release();
+        if (transactionStatus === undefined) {
+          reject();
+        } else {
+          resolve(transactionStatus);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      reject(err);
+    }
+  });
+};

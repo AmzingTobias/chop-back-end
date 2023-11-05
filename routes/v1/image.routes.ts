@@ -10,10 +10,12 @@ import {
   addImageForProduct,
   deleteImageForProduct,
   getImagesForProduct,
+  setImageSortOrderForProduct,
 } from "../../models/images.models";
 import { EDatabaseResponses } from "../../data/data";
 import { deleteSavedFile } from "../../common/image";
 import { EAccountTypes, verifyToken } from "../../security/security";
+import { isArrayOfNumbers } from "../../common/validation";
 
 // The express url path to find images
 export const expressProductImagePath = "/images/products";
@@ -259,6 +261,84 @@ imageRouter.get("/product/:id", async (req, res) => {
     const images = await getImagesForProduct(Number(id));
     res.json(images);
   } catch (_) {
+    return res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
+  }
+});
+
+/**
+ * @swagger
+ * /images/product/{id}:
+ *   put:
+ *     tags: [Products, Images]
+ *     summary: Set the sort order for a list of images
+ *     description: Set the sort order for a list of images related to a product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product to set the sort order for
+ *         schema:
+ *           type: integer
+ *       - in: body
+ *         name: image-ids
+ *         required: true
+ *         description: The list of image ids in the sort order desired
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: integer
+ *     responses:
+ *       200:
+ *         description: Image sort order was updated
+ *       400:
+ *          description: Missing required fields, product id was invalid, or image ids were invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+imageRouter.put("/product/:id", verifyToken, async (req, res) => {
+  // Validate permissions
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  const { "image-ids": imageIds } = req.body;
+  if (!isArrayOfNumbers(imageIds)) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
+  try {
+    const updated = await setImageSortOrderForProduct(Number(id), imageIds);
+    switch (updated) {
+      case EDatabaseResponses.OK:
+        return res.send(ETextResponse.IMAGE_SORT_ORDER_UPDATED);
+      case EDatabaseResponses.DOES_NOT_EXIST:
+        return res
+          .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+          .send(
+            `${ETextResponse.PRODUCT_ID_NOT_EXISTS} or ${ETextResponse.FILE_ID_NOT_VALID}`
+          );
+      default:
+        return res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } catch (err) {
     return res
       .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
       .send(ETextResponse.INTERNAL_ERROR);
