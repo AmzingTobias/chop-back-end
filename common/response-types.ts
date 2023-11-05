@@ -38,4 +38,10 @@ export enum ETextResponse {
   ACCOUNT_ALREADY_EXISTS = "Account already exists",
   UNAUTHORIZED_REQUEST = "Account lacks required permissions",
   ACCOUNT_PASS_UPDATED = "Account password updated",
+  // Files
+  INVALID_FILE_TYPE = "Invalid file type",
+  FILE_UPLOADED = "File uploaded",
+  FILE_REMOVED = "File removed",
+  FILE_ID_NOT_VALID = "File id not valid",
+  IMAGE_SORT_ORDER_UPDATED = "Image sort order updated",
 }
