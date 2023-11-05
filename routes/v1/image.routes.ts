@@ -9,6 +9,7 @@ import {
 import {
   addImageForProduct,
   deleteImageForProduct,
+  getImagesForProduct,
 } from "../../models/images.models";
 import { EDatabaseResponses } from "../../data/data";
 import { deleteSavedFile } from "../../common/image";
@@ -213,6 +214,52 @@ imageRouter.delete("/product", verifyToken, async (req, res) => {
     }
   } catch (_) {
     res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
+  }
+});
+
+/**
+ * @swagger
+ * /images/product/{id}:
+ *   get:
+ *     tags: [Products, Images]
+ *     summary: Get all images for a product
+ *     description: Get all images for a product, sorted by their sort position
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product to get the images for
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: An object with details of the products.
+ *         schema:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               description: The id of the image.
+ *             fileName:
+ *               type: string
+ *               description: The filename of the image
+ *       500:
+ *          description: Internal server error
+ */
+imageRouter.get("/product/:id", async (req, res) => {
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  try {
+    const images = await getImagesForProduct(Number(id));
+    res.json(images);
+  } catch (_) {
+    return res
       .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
       .send(ETextResponse.INTERNAL_ERROR);
   }

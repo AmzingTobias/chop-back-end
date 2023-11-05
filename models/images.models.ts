@@ -6,6 +6,11 @@ import {
 } from "../common/postgresql-error-codes";
 import pool, { EDatabaseResponses, ICustomError } from "../data/data";
 
+interface IImageEntry {
+  id: number;
+  fileName: string;
+}
+
 /**
  * Add a new image for a product
  * @param productId The product to add the image for
@@ -76,6 +81,30 @@ export const deleteImageForProduct = (
           } else {
             resolve(EDatabaseResponses.DOES_NOT_EXIST);
           }
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get all the images for a product, sorted by their sort position
+ * @param productId The Id of the product to get the images for
+ * @returns A list of images for the product. Rejects on database errors
+ */
+export const getImagesForProduct = (
+  productId: number
+): Promise<IImageEntry[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `SELECT id, source AS "fileName" FROM product_images WHERE product_id = $1 ORDER BY sort_position`,
+      [productId],
+      (err: ICustomError, res) => {
+        if (err) {
+          console.error(`${err.code}: ${err.message}`);
+          reject(err);
+        } else {
+          resolve(res.rows as IImageEntry[]);
         }
       }
     );
