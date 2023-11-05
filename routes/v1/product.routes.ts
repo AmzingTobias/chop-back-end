@@ -4,6 +4,7 @@ import {
   createNewProduct,
   deleteAssignedProductTypes,
   getDetailedProductInfo,
+  getRandomNumberOfProducts,
   setPriceForProduct,
   updateBrandId,
   updateProductDescription,
@@ -18,6 +19,60 @@ import { EAccountTypes, verifyToken } from "../../security/security";
 import { isArrayOfNumbers } from "../../common/validation";
 
 export const productRouter = Router();
+
+/**
+ * @swagger
+ * /products/random:
+ *   get:
+ *     tags: [Products]
+ *     summary: Retrieve a list of random products
+ *     description: Retrieve a custom amount of random products
+ *     parameters:
+ *       - in: query
+ *         name: amount
+ *         required: false
+ *         description: The number of random products to get
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: A list of products.
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: The id of the product.
+ *               name:
+ *                 type: string
+ *                 description: The name of the product.
+ *               available:
+ *                 type: boolean
+ *                 description: If the product is available to be purchased.
+ *               stock_count:
+ *                 type: number
+ *                 description: The stock count for the product.
+ *               price:
+ *                 type: number
+ *                 description: The price for the product.
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.get("/random", async (req, res) => {
+  const { amount } = req.query;
+  try {
+    const products = await getRandomNumberOfProducts(
+      Number.isNaN(Number(amount)) ? 1 : Number(amount)
+    );
+    res.json(products);
+  } catch (err) {
+    res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
+  }
+});
 
 /**
  * @swagger

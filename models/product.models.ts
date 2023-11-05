@@ -470,3 +470,49 @@ export const getDetailedProductInfo = (
     );
   });
 };
+
+/**
+ * Get a random number of products
+ * @param numberOfProductsToGet The number of random products to get
+ * @returns A list of product entries that were randomly picked
+ */
+export const getRandomNumberOfProducts = (
+  numberOfProductsToGet: number
+): Promise<IBaseProductEntry[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+      WITH LatestPrice AS (
+        SELECT
+            product_id,
+            MAX(date_active_from) AS max_date
+        FROM
+            product_prices
+        GROUP BY
+            product_id
+      )
+      SELECT 
+          products.id AS "id", 
+          products.name AS "name", 
+          products.available, 
+          product_stock_levels.amount AS "stock_count", 
+          product_prices.price::money::numeric::float8
+      FROM products
+          JOIN product_prices ON products.id = product_prices.product_id
+          JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
+          JOIN assigned_product_type ON products.id = assigned_product_type.product_id
+          JOIN product_stock_levels ON products.id = product_stock_levels.product_id
+      ORDER BY RANDOM()
+      LIMIT ${numberOfProductsToGet}
+    `,
+      (err: ICustomError, res) => {
+        if (err) {
+          console.error(`${err.code}: ${err.message}`);
+          reject(err);
+        } else {
+          resolve(res.rows as IBaseProductEntry[]);
+        }
+      }
+    );
+  });
+};
