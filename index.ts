@@ -10,6 +10,7 @@ import { authRouter } from "./routes/v1/auth.routes";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { expressProductImagePath, imageRouter } from "./routes/v1/image.routes";
+import cors from "cors";
 
 // Swagger Docs
 const swaggerSpecv1 = swaggerJSDoc({
@@ -26,6 +27,12 @@ const swaggerSpecv1 = swaggerJSDoc({
 
 const app: Express = express();
 const port = process.env.PORT;
+
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());
