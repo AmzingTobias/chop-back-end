@@ -5,6 +5,7 @@ import {
   createJWTForUser,
   hashPassword,
   validateAccountPassword,
+  validateEmail,
 } from "../security/security";
 import { EResponseStatusCodes, ETextResponse } from "../common/response-types";
 import { EDatabaseResponses } from "../data/data";
@@ -32,7 +33,11 @@ export const create_account_controller = (
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   }
-
+  if (!validateEmail(email)) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
   hashPassword(password)
     .then(async (hashedPassword) => {
       try {
