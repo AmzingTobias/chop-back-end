@@ -159,3 +159,38 @@ export const update_account_password = (
     );
   });
 };
+
+type TAccountDetails = {
+  email: string;
+};
+
+/**
+ * Get account details for an account
+ * @param accountId The id of the account to get the details for
+ * @returns TAccountDetails if the account id matches an entry, null if no account exists.
+ * Rejects on database errors
+ */
+export const get_account_details = (
+  accountId: number
+): Promise<TAccountDetails | null> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "SELECT email FROM accounts WHERE id = $1",
+      [accountId],
+      (err: ICustomError, res) => {
+        if (err) {
+          console.error(
+            `${(err as ICustomError).code}: ${(err as ICustomError).message}`
+          );
+          reject(err.message);
+        } else {
+          if (res.rowCount > 0) {
+            resolve(res.rows[0] as TAccountDetails);
+          } else {
+            resolve(null);
+          }
+        }
+      }
+    );
+  });
+};

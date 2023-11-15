@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   EAccountTypeTables,
+  get_account_details,
   update_account_password,
 } from "../../models/auth.models";
 import {
@@ -22,7 +23,49 @@ export const authRouter = Router();
 
 /**
  * @swagger
- * /customer/create:
+ * /auth/:
+ *   get:
+ *     tags: [Accounts]
+ *     summary: Get the details of an account
+ *     description: Get the details of an account, based on the credentials supplied
+ *     responses:
+ *       200:
+ *          description: Customer account details
+ *          schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The email for the account
+ *       401:
+ *          description: Account details invalid
+ *       500:
+ *          description: Internal server error
+ */
+authRouter.get("/", verifyToken, (req, res) => {
+  if (!req.user) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  get_account_details(req.user.user_id)
+    .then((accountDetails) => {
+      if (accountDetails !== null) {
+        res.json(accountDetails);
+      } else {
+        res.status(EResponseStatusCodes.UNAUTHORIZED_CODE);
+      }
+    })
+    .catch(() => {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    });
+});
+
+/**
+ * @swagger
+ * /auth/customer/create:
  *   post:
  *     tags: [Customer, Accounts]
  *     summary: Create a new customer account
@@ -56,7 +99,7 @@ authRouter.post("/customer/create/", (req, res) => {
 
 /**
  * @swagger
- * /customer/login:
+ * /auth/customer/login:
  *   post:
  *     tags: [Customer, Accounts]
  *     summary: Login to a customer account
@@ -96,7 +139,7 @@ authRouter.post("/customer/login", async (req, res) => {
 
 /**
  * @swagger
- * /sales/create:
+ * /auth/sales/create:
  *   post:
  *     tags: [Sales, Accounts]
  *     summary: Create a new sales account
@@ -137,7 +180,7 @@ authRouter.post("/sales/create", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /sales/login:
+ * /auth/sales/login:
  *   post:
  *     tags: [Sales, Accounts]
  *     summary: Login to a sales account
@@ -177,7 +220,7 @@ authRouter.post("/sales/login", (req, res) => {
 
 /**
  * @swagger
- * /admin/create:
+ * /auth/admin/create:
  *   post:
  *     tags: [Admin, Accounts]
  *     summary: Create a new admin account
@@ -218,7 +261,7 @@ authRouter.post("/admin/create", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /admin/login:
+ * /auth/admin/login:
  *   post:
  *     tags: [Admin, Accounts]
  *     summary: Login to an admin account
@@ -258,7 +301,7 @@ authRouter.post("/admin/login", (req, res) => {
 
 /**
  * @swagger
- * /support/create:
+ * /auth/support/create:
  *   post:
  *     tags: [Support, Accounts]
  *     summary: Create a new support account
@@ -299,7 +342,7 @@ authRouter.post("/support/create", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /support/login:
+ * /auth/support/login:
  *   post:
  *     tags: [Support, Accounts]
  *     summary: Login to a support account
@@ -339,7 +382,7 @@ authRouter.post("/support/login", (req, res) => {
 
 /**
  * @swagger
- * /warehouse/create:
+ * /auth/warehouse/create:
  *   post:
  *     tags: [Warehouse, Accounts]
  *     summary: Create a new warehouse account
@@ -380,7 +423,7 @@ authRouter.post("/warehouse/create", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /warehouse/login:
+ * /auth/warehouse/login:
  *   post:
  *     tags: [Warehouse, Accounts]
  *     summary: Login to a warehouse account
@@ -420,7 +463,7 @@ authRouter.post("/warehouse/login", (req, res) => {
 
 /**
  * @swagger
- * /change-password:
+ * /auth/change-password:
  *   put:
  *     tags: [Accounts]
  *     summary: Update an account's password
