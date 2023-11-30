@@ -9,12 +9,59 @@ import {
  * @param description The description for the base product variant
  * @param brandId The brand id if one exists for the base product
  * @param productTypeIds A list of product type ids to assign to the base product
+ * @returns EDatabaseResponses.OK if the base product is created,
+ * EDatabaseResponses.FOREIGN_KEY_VIOLATION if the entries for the product
+ * type ids or brand ids are invalid.
+ * Rejects on database errors
  */
 export const createNewBaseProduct = (
   description: string,
   brandId: number,
-  productTypeIds?: number[]
-) => {};
+  productTypeIds: number[]
+): Promise<EDatabaseResponses> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const client = await pool.connect();
+      let transactionStatus: EDatabaseResponses | undefined = undefined;
+      try {
+        await client.query("BEGIN");
+        const createProductQuery =
+          "INSERT INTO base_products(description, brand_id) VALUES ($1, $2) RETURNING id";
+        const res = await client.query(createProductQuery, [
+          description,
+          brandId,
+        ]);
+        for await (const productTypeId of productTypeIds) {
+          await client.query(
+            "INSERT INTO assigned_product_type(product_id, type_id) VALUES($1, $2)",
+            [res.rows[0].id, productTypeId]
+          );
+        }
+        await client.query("COMMIT");
+        transactionStatus = EDatabaseResponses.OK;
+      } catch (err) {
+        if ((err as ICustomError).code === FOREIGN_KEY_VIOLATION) {
+          transactionStatus = EDatabaseResponses.FOREIGN_KEY_VIOLATION;
+        } else {
+          console.error(
+            `${(err as ICustomError).code}: ${(err as ICustomError).message}`
+          );
+        }
+        await client.query("ROLLBACK");
+      } finally {
+        client.release();
+        if (transactionStatus === undefined) {
+          reject();
+        } else {
+          resolve(transactionStatus);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      reject(err);
+    }
+  });
+};
 
 /**
  * Update a base products description
