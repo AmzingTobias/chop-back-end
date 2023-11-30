@@ -1,9 +1,9 @@
 import { QueryConfig } from "pg";
-import pool, { EDatabaseResponses, ICustomError } from "../data/data";
+import pool, { EDatabaseResponses, ICustomError } from "../../data/data";
 import {
   FOREIGN_KEY_VIOLATION,
   UNIQUE_CONSTRAINT_FAILED,
-} from "../common/postgresql-error-codes";
+} from "../../common/postgresql-error-codes";
 
 export interface IBaseProductEntry {
   id: number;

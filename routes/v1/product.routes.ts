@@ -9,7 +9,7 @@ import {
   updateBrandId,
   updateProductDescription,
   updateProductName,
-} from "../../models/product.models";
+} from "../../models/products/product.models";
 import {
   EResponseStatusCodes,
   ETextResponse,

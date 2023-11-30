@@ -11,7 +11,7 @@ import {
   EResponseStatusCodes,
 } from "../../common/response-types";
 import { EAccountTypes, verifyToken } from "../../security/security";
-import { getProductsByType } from "../../models/product.models";
+import { getProductsByType } from "../../models/products/product.models";
 
 export const productTypeRouter = Router();
 
