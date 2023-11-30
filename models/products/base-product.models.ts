@@ -20,11 +20,33 @@ export const createNewBaseProduct = (
  * Update a base products description
  * @param baseProductId The base product id to update
  * @param description The new description to use
+ * @returns EDatabaseResponses.OK if the description is updated,
+ * EDatabaseResponses.DOES_NOT_EXIST if the product does not exist.
+ * Rejects on database errors
  */
 export const updateBaseProductDescription = (
   baseProductId: number,
   description: string
-) => {};
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "UPDATE base_products SET description = $1 WHERE id = $2",
+      [description, baseProductId],
+      (err: ICustomError, res) => {
+        if (err) {
+          console.error(`${err.code}: ${err.message}`);
+          reject(err);
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};
 
 /**
  * Update a base products assigned brand
