@@ -6,19 +6,19 @@ import {
   setPriceForProduct,
   updateProductDescription,
   updateProductName,
-} from "../../models/products/product.models";
+} from "../../../models/products/product.models";
 import {
   EResponseStatusCodes,
   ETextResponse,
-} from "../../common/response-types";
-import { EDatabaseResponses } from "../../data/data";
-import { EAccountTypes, verifyToken } from "../../security/security";
-import { isArrayOfNumbers } from "../../common/validation";
+} from "../../../common/response-types";
+import { EDatabaseResponses } from "../../../data/data";
+import { EAccountTypes, verifyToken } from "../../../security/security";
+import { isArrayOfNumbers } from "../../../common/validation";
 import {
   assignProductTypesToBaseProduct,
   unassignProductTypesToBaseProduct,
   updateBaseProductBrand,
-} from "../../models/products/base-product.models";
+} from "../../../models/products/base-product.models";
 
 export const productRouter = Router();
 
