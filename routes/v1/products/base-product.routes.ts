@@ -2,6 +2,7 @@ import { Router } from "express";
 import { EAccountTypes, verifyToken } from "../../../security/security";
 import {
   assignProductTypesToBaseProduct,
+  createNewBaseProduct,
   unassignProductTypesFromBaseProduct,
   updateBaseProductBrand,
 } from "../../../models/products/base-product.models";
@@ -13,6 +14,59 @@ import { EDatabaseResponses } from "../../../data/data";
 import { isArrayOfNumbers } from "../../../common/validation";
 
 export const baseProductRouter = Router();
+
+baseProductRouter.post("/", verifyToken, (req, res) => {
+  // Auth check, user must be sales or admin
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const {
+    description,
+    "brand-id": brandId,
+    "product-type-ids": productTypeIds,
+  } = req.body;
+  // Check all data that is expected is there
+  if (
+    typeof description === "string" &&
+    (typeof brandId === "undefined" || typeof brandId === "number") &&
+    isArrayOfNumbers(productTypeIds)
+  ) {
+    createNewBaseProduct(description, productTypeIds, brandId)
+      .then((response) => {
+        switch (response) {
+          case EDatabaseResponses.OK:
+            return res
+              .status(EResponseStatusCodes.CREATED_CODE)
+              .send(ETextResponse.BASE_PRODUCT_CREATED);
+          case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
+            return res
+              .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+              .send(
+                `${ETextResponse.BRAND_ID_NOT_EXIST} OR ${ETextResponse.PRODUCT_TYPE_ID_NOT_EXIST}`
+              );
+          default:
+            return res
+              .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+              .send(ETextResponse.INTERNAL_ERROR);
+        }
+      })
+      .catch((_) => {
+        return res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+      });
+  } else {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(`${ETextResponse.MISSING_FIELD_IN_REQ_BODY}`);
+  }
+});
 
 /**
  * @swagger
@@ -66,12 +120,12 @@ baseProductRouter.put("/:id/brand", verifyToken, async (req, res) => {
         const updated = await updateBaseProductBrand(Number(id), brandId);
         switch (updated) {
           case EDatabaseResponses.OK:
-            res.send(ETextResponse.PRODUCT_UPDATED);
+            res.send(ETextResponse.BASE_PRODUCT_UPDATED);
             break;
           case EDatabaseResponses.DOES_NOT_EXIST:
             res
               .status(EResponseStatusCodes.BAD_REQUEST_CODE)
-              .send(ETextResponse.PRODUCT_ID_NOT_EXISTS);
+              .send(ETextResponse.BASE_PRODUCT_ID_NOT_EXIST);
             break;
           case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
             res
@@ -144,7 +198,7 @@ baseProductRouter.delete("/:id/brand", verifyToken, async (req, res) => {
         case EDatabaseResponses.DOES_NOT_EXIST:
           res
             .status(EResponseStatusCodes.BAD_REQUEST_CODE)
-            .send(ETextResponse.PRODUCT_ID_NOT_EXISTS);
+            .send(ETextResponse.BASE_PRODUCT_ID_NOT_EXIST);
           break;
         default:
           res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
@@ -227,7 +281,7 @@ baseProductRouter.post("/:id/product-types", verifyToken, async (req, res) => {
         return res
           .status(EResponseStatusCodes.BAD_REQUEST_CODE)
           .send(
-            `${ETextResponse.PRODUCT_ID_NOT_EXISTS} or ${ETextResponse.PRODUCT_TYPE_ID_NOT_EXIST}`
+            `${ETextResponse.BASE_PRODUCT_ID_NOT_EXIST} or ${ETextResponse.PRODUCT_TYPE_ID_NOT_EXIST}`
           );
       case EDatabaseResponses.CONFLICT:
         return res

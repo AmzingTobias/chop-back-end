@@ -16,8 +16,8 @@ import {
  */
 export const createNewBaseProduct = (
   description: string,
-  brandId: number,
-  productTypeIds: number[]
+  productTypeIds: number[],
+  brandId?: number
 ): Promise<EDatabaseResponses> => {
   return new Promise(async (resolve, reject) => {
     try {
