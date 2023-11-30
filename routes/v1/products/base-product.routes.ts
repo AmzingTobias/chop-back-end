@@ -3,6 +3,7 @@ import { EAccountTypes, verifyToken } from "../../../security/security";
 import {
   assignProductTypesToBaseProduct,
   createNewBaseProduct,
+  deleteBaseProduct,
   unassignProductTypesFromBaseProduct,
   updateBaseProductBrand,
 } from "../../../models/products/base-product.models";
@@ -65,6 +66,70 @@ baseProductRouter.post("/", verifyToken, (req, res) => {
     return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(`${ETextResponse.MISSING_FIELD_IN_REQ_BODY}`);
+  }
+});
+
+/**
+ * @swagger
+ * /products/base/{id}:
+ *   delete:
+ *     tags: [Base Products, Products]
+ *     summary: Delete a base product
+ *     description: Delete an existing base product using its id
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the base product to delete
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *          description: Base product deleted
+ *       400:
+ *          description: Base product does not exist to delete
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+baseProductRouter.delete("/:id", verifyToken, (req, res) => {
+  // Auth check, user must be sales or admin
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  } else {
+    deleteBaseProduct(Number(id))
+      .then((response) => {
+        switch (response) {
+          case EDatabaseResponses.OK:
+            return res.send(ETextResponse.BASE_PRODUCT_DELETED);
+          case EDatabaseResponses.DOES_NOT_EXIST:
+            return res
+              .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+              .send(ETextResponse.BASE_PRODUCT_ID_NOT_EXIST);
+          default:
+            return res
+              .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+              .send(ETextResponse.INTERNAL_ERROR);
+        }
+      })
+      .catch((_) => {
+        return res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+      });
   }
 });
 

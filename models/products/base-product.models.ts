@@ -64,6 +64,36 @@ export const createNewBaseProduct = (
 };
 
 /**
+ * Delete a base product
+ * @param baseProductId The id of the base product to delete
+ * @returns EDatabaseResponse.OK if the base product is deleted,
+ * EDatabaseResponse.DOES_NOT_EXIST if the base product was not deleted because it does not exist.
+ * Rejects on database errors
+ */
+export const deleteBaseProduct = (
+  baseProductId: number
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "DELETE FROM base_products WHERE id = $1",
+      [baseProductId],
+      (err: ICustomError, res) => {
+        if (err) {
+          console.error(`${err.code}: ${err.message}`);
+          reject(err);
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};
+
+/**
  * Update a base products description
  * @param baseProductId The base product id to update
  * @param description The new description to use
