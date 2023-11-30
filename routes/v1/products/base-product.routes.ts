@@ -16,6 +16,45 @@ import { isArrayOfNumbers } from "../../../common/validation";
 
 export const baseProductRouter = Router();
 
+/**
+ * @swagger
+ * /products/base:
+ *   post:
+ *     tags: [Base Products]
+ *     summary: Create a new base product
+ *     description: Create a new base product, that can then have variations made of it
+ *     parameters:
+ *       - in: body
+ *         name: description
+ *         required: true
+ *         description: A brief description of what the base product is representing
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: product-type-ids
+ *         required: true
+ *         description: A list of product types to assign to the base product
+ *         schema:
+ *           type: array
+ *           items:
+ *            type:
+ *              number
+ *       - in: body
+ *         name: brand-id
+ *         required: false
+ *         description: A brand id to associate with the base product
+ *         schema:
+ *           type: number
+ *     responses:
+ *       201:
+ *          description: Product base created
+ *       400:
+ *          description: Missing fields in request body, or the brand / product type id(s) were invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
 baseProductRouter.post("/", verifyToken, (req, res) => {
   // Auth check, user must be sales or admin
   if (

@@ -211,10 +211,10 @@ export const getProductsByType = (
         product_stock_levels.amount AS "stock_count", 
         product_prices.price::money::numeric::float8
     FROM products
-        JOIN base_products ON products.id = base_products.id
+        JOIN base_products ON products.base_product_id = base_products.id
+        JOIN assigned_product_type ON base_products.id = assigned_product_type.product_id
         JOIN product_prices ON products.id = product_prices.product_id
         JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
-        JOIN assigned_product_type ON products.id = assigned_product_type.product_id
         JOIN product_stock_levels ON products.id = product_stock_levels.product_id
     WHERE assigned_product_type.type_id = $1
     `;
@@ -259,10 +259,9 @@ export const getProductsByBrand = (
         product_stock_levels.amount AS "stock_count", 
         product_prices.price::money::numeric::float8
     FROM products
-        JOIN base_products ON products.id = base_products.id
+        JOIN base_products ON products.base_product_id = base_products.id
         JOIN product_prices ON products.id = product_prices.product_id
         JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
-        JOIN assigned_product_type ON products.id = assigned_product_type.product_id
         JOIN product_stock_levels ON products.id = product_stock_levels.product_id
     WHERE base_products.brand_id = $1
     `;
@@ -306,10 +305,9 @@ export const getDetailedProductInfo = (
         product_prices.price::money::numeric::float8,
         products.description
     FROM products
-        JOIN base_products ON products.id = base_products.id
+        JOIN base_products ON products.base_product_id = base_products.id
         JOIN product_prices ON products.id = product_prices.product_id
         JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
-        JOIN assigned_product_type ON products.id = assigned_product_type.product_id
         JOIN product_stock_levels ON products.id = product_stock_levels.product_id
         LEFT JOIN brands ON base_products.brand_id = brands.id
     WHERE products.id = $1
@@ -359,7 +357,6 @@ export const getRandomNumberOfProducts = (
       FROM products
           JOIN product_prices ON products.id = product_prices.product_id
           JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
-          JOIN assigned_product_type ON products.id = assigned_product_type.product_id
           JOIN product_stock_levels ON products.id = product_stock_levels.product_id
       ORDER BY RANDOM()
       LIMIT ${numberOfProductsToGet}
