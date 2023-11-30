@@ -193,7 +193,7 @@ export const assignProductTypesToBaseProduct = (
  * @param productTypeIds The id of the product types to unassign
  * @returns EDatabaseResponses.OK if transaction completes. Rejects on database errors
  */
-export const unassignProductTypesToBaseProduct = (
+export const unassignProductTypesFromBaseProduct = (
   baseProductId: number,
   productTypeIds: number[]
 ): Promise<EDatabaseResponses> => {

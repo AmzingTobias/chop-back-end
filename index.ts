@@ -11,6 +11,7 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import { expressProductImagePath, imageRouter } from "./routes/v1/image.routes";
 import cors from "cors";
+import { baseProductRouter } from "./routes/v1/products/base-product.routes";
 
 // Swagger Docs
 const swaggerSpecv1 = swaggerJSDoc({
@@ -22,7 +23,7 @@ const swaggerSpecv1 = swaggerJSDoc({
     swagger: "2.0",
     basePath: "/v1",
   },
-  apis: ["./routes/v1/*.routes.ts"],
+  apis: ["./routes/v1/*.routes.ts", "./routes/v1/*/*.routes.ts"],
 });
 
 const app: Express = express();
@@ -46,6 +47,7 @@ app.use(
 
 // Routes
 app.use("/v1/auth", authRouter);
+app.use("/v1/products/base", baseProductRouter);
 app.use("/v1/products", productRouter);
 app.use("/v1/product-types", productTypeRouter);
 app.use("/v1/brands", brandRouter);
