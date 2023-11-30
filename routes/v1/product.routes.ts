@@ -1,12 +1,9 @@
 import { Router } from "express";
 import {
-  assignProductTypes,
   createNewProductVariant,
-  deleteAssignedProductTypes,
   getDetailedProductInfo,
   getRandomNumberOfProducts,
   setPriceForProduct,
-  updateBrandId,
   updateProductDescription,
   updateProductName,
 } from "../../models/products/product.models";
@@ -17,6 +14,11 @@ import {
 import { EDatabaseResponses } from "../../data/data";
 import { EAccountTypes, verifyToken } from "../../security/security";
 import { isArrayOfNumbers } from "../../common/validation";
+import {
+  assignProductTypesToBaseProduct,
+  unassignProductTypesToBaseProduct,
+  updateBaseProductBrand,
+} from "../../models/products/base-product.models";
 
 export const productRouter = Router();
 
@@ -402,7 +404,7 @@ productRouter.put("/base/:id/brand", verifyToken, async (req, res) => {
     const { "brand-id": brandId } = req.body;
     if (typeof brandId === "number") {
       try {
-        const updated = await updateBrandId(Number(id), brandId);
+        const updated = await updateBaseProductBrand(Number(id), brandId);
         switch (updated) {
           case EDatabaseResponses.OK:
             res.send(ETextResponse.PRODUCT_UPDATED);
@@ -475,7 +477,7 @@ productRouter.delete("/base/:id/brand", verifyToken, async (req, res) => {
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
     try {
-      const deleted = await updateBrandId(Number(id), null);
+      const deleted = await updateBaseProductBrand(Number(id));
       switch (deleted) {
         case EDatabaseResponses.OK:
           res.send(ETextResponse.BRAND_DELETED);
@@ -734,7 +736,10 @@ productRouter.post("/base/:id/product-types", verifyToken, async (req, res) => {
       .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   }
   try {
-    const assigned = await assignProductTypes(Number(id), productTypeIds);
+    const assigned = await assignProductTypesToBaseProduct(
+      Number(id),
+      productTypeIds
+    );
     switch (assigned) {
       case EDatabaseResponses.OK:
         return res
@@ -821,7 +826,7 @@ productRouter.delete(
         .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
     }
     try {
-      const deleted = await deleteAssignedProductTypes(
+      const deleted = await unassignProductTypesToBaseProduct(
         Number(id),
         productTypeIds
       );
