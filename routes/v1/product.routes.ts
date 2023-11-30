@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   assignProductTypes,
-  createNewProduct,
+  createNewProductVariant,
   deleteAssignedProductTypes,
   getDetailedProductInfo,
   getRandomNumberOfProducts,
@@ -355,16 +355,16 @@ productRouter.delete("/:id/description", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /products/{id}/brand:
+ * /products/base/{id}/brand:
  *   put:
  *     tags: [Products, Brands]
- *     summary: Update a product's brand
- *     description: Update an existing products brand
+ *     summary: Update a base product's brand
+ *     description: Update an existing base products brand
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The id of the product to update
+ *         description: The id of the base product to update
  *         schema:
  *           type: integer
  *       - in: body
@@ -383,7 +383,7 @@ productRouter.delete("/:id/description", verifyToken, async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productRouter.put("/:id/brand", verifyToken, async (req, res) => {
+productRouter.put("/base/:id/brand", verifyToken, async (req, res) => {
   if (
     !req.user ||
     (req.user.accountType !== EAccountTypes.admin &&
@@ -436,16 +436,16 @@ productRouter.put("/:id/brand", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /products/{id}/brand:
+ * /products/base/{id}/brand:
  *   delete:
  *     tags: [Products, Brands]
- *     summary: Remvoe a product's brand
- *     description: Remove an existing products brand
+ *     summary: Remvoe a base product's brand
+ *     description: Remove an existing base products brand
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The id of the product to update
+ *         description: The id of the base product to update
  *         schema:
  *           type: integer
  *     responses:
@@ -458,7 +458,7 @@ productRouter.put("/:id/brand", verifyToken, async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productRouter.delete("/:id/brand", verifyToken, async (req, res) => {
+productRouter.delete("/base/:id/brand", verifyToken, async (req, res) => {
   if (
     !req.user ||
     (req.user.accountType !== EAccountTypes.admin &&
@@ -518,18 +518,9 @@ productRouter.delete("/:id/brand", verifyToken, async (req, res) => {
  *         schema:
  *           type: number
  *       - in: body
- *         name: product-type-ids
- *         required: false
- *         description: The list of categories this product falls under
- *         schema:
- *           type: array
- *           items:
- *            type:
- *              number
- *       - in: body
- *         name: brand-id
- *         required: false
- *         description: The id of the brand that created this product
+ *         name: base-id
+ *         required: true
+ *         description: The id of the base product this is a variation of
  *         schema:
  *           type: number
  *       - in: body
@@ -542,7 +533,7 @@ productRouter.delete("/:id/brand", verifyToken, async (req, res) => {
  *       201:
  *          description: Product was created
  *       400:
- *          description: Missing fields in request body, or the brand ids / product ids supplied are invalid
+ *          description: Missing fields in request body, or the base product id supplied are invalid
  *       401:
  *          description: Account lacks required permissions
  *       500:
@@ -565,30 +556,20 @@ productRouter.post("/", verifyToken, async (req, res) => {
     }
   }
 
-  const {
-    name,
-    price,
-    "product-type-ids": productTypeIds,
-    "brand-id": brandId,
-    description,
-  } = req.body;
+  const { name, price, "base-id": baseProductId, description } = req.body;
   if (
     typeof name === "string" &&
     typeof price === "number" &&
-    (typeof (brandId === "number") ||
-      brandId === undefined ||
-      brandId === null) &&
+    typeof baseProductId === "number" &&
     (typeof description === "string" ||
       description === undefined ||
-      description === null) &&
-    isArrayOfNumbers(productTypeIds)
+      description === null)
   ) {
     try {
-      const created = await createNewProduct(
+      const created = await createNewProductVariant(
+        baseProductId,
         name,
-        productTypeIds,
         price,
-        brandId,
         description
       );
       switch (created) {
@@ -699,16 +680,16 @@ productRouter.post("/:id/price", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /products/{id}/product-types:
+ * /products/base/{id}/product-types:
  *   post:
  *     tags: [Products, Product types]
- *     summary: Assign new product types to a product
- *     description: Assign multiple new product types to an existing product
+ *     summary: Assign new product types to a base product
+ *     description: Assign multiple new product types to an existing base product
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The product id to assign the product types to
+ *         description: The base product id to assign the product types to
  *         schema:
  *           type: number
  *       - in: body
@@ -730,7 +711,7 @@ productRouter.post("/:id/price", verifyToken, async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productRouter.post("/:id/product-types", verifyToken, async (req, res) => {
+productRouter.post("/base/:id/product-types", verifyToken, async (req, res) => {
   if (
     !req.user ||
     (req.user.accountType !== EAccountTypes.admin &&
@@ -783,16 +764,16 @@ productRouter.post("/:id/product-types", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /products/{id}/product-types:
+ * /products/base/{id}/product-types:
  *   delete:
  *     tags: [Products, Product types]
- *     summary: Unassign product types from a product
- *     description: Unassign multiple product types from an existing product
+ *     summary: Unassign product types from a base product
+ *     description: Unassign multiple product types from an existing base product
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The product id to remove the product types from
+ *         description: The base product id to remove the product types from
  *         schema:
  *           type: number
  *       - in: body
@@ -814,44 +795,48 @@ productRouter.post("/:id/product-types", verifyToken, async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productRouter.delete("/:id/product-types", verifyToken, async (req, res) => {
-  if (
-    !req.user ||
-    (req.user.accountType !== EAccountTypes.admin &&
-      req.user.accountType !== EAccountTypes.sales)
-  ) {
-    return res
-      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
-      .send(ETextResponse.UNAUTHORIZED_REQUEST);
-  }
-  const { id } = req.params;
-  if (Number.isNaN(Number(id))) {
-    return res
-      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
-      .send(ETextResponse.ID_INVALID_IN_REQ);
-  }
-  const { "product-type-ids": productTypeIds } = req.body;
-  if (!isArrayOfNumbers(productTypeIds)) {
-    return res
-      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
-      .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
-  }
-  try {
-    const deleted = await deleteAssignedProductTypes(
-      Number(id),
-      productTypeIds
-    );
-    switch (deleted) {
-      case EDatabaseResponses.OK:
-        return res.send(ETextResponse.PRODUCT_TYPE_REMOVED_FROM_PRODUCT);
-      default:
-        return res
-          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
-          .send(ETextResponse.INTERNAL_ERROR);
+productRouter.delete(
+  "/base/:id/product-types",
+  verifyToken,
+  async (req, res) => {
+    if (
+      !req.user ||
+      (req.user.accountType !== EAccountTypes.admin &&
+        req.user.accountType !== EAccountTypes.sales)
+    ) {
+      return res
+        .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+        .send(ETextResponse.UNAUTHORIZED_REQUEST);
     }
-  } catch (_) {
-    return res
-      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
-      .send(ETextResponse.INTERNAL_ERROR);
+    const { id } = req.params;
+    if (Number.isNaN(Number(id))) {
+      return res
+        .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+        .send(ETextResponse.ID_INVALID_IN_REQ);
+    }
+    const { "product-type-ids": productTypeIds } = req.body;
+    if (!isArrayOfNumbers(productTypeIds)) {
+      return res
+        .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+        .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+    }
+    try {
+      const deleted = await deleteAssignedProductTypes(
+        Number(id),
+        productTypeIds
+      );
+      switch (deleted) {
+        case EDatabaseResponses.OK:
+          return res.send(ETextResponse.PRODUCT_TYPE_REMOVED_FROM_PRODUCT);
+        default:
+          return res
+            .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+            .send(ETextResponse.INTERNAL_ERROR);
+      }
+    } catch (_) {
+      return res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    }
   }
-});
+);

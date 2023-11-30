@@ -122,21 +122,19 @@ export const updateBrandId = (
 
 /**
  * Create a new product
+ * @param baseProductId The id of the base product variation
  * @param productName The name of the products
- * @param productTypeIds The list of category ids this product falls under
  * @param price The price to list the product for
- * @param brandId The id of the brand this product is for
  * @param description A description of the product
  * @returns EDatabaseResponses.OK if the product is created,
  * EDatabaseResponses.FOREIGN_KEY_VIOLATION if the entries for the product
  * type ids or brand ids are invalid.
  * Rejects on database errors
  */
-export const createNewProduct = (
+export const createNewProductVariant = (
+  baseProductId: number,
   productName: string,
-  productTypeIds: number[],
   price: number,
-  brandId?: number,
   description?: string
 ): Promise<EDatabaseResponses> => {
   return new Promise(async (resolve, reject) => {
@@ -146,10 +144,10 @@ export const createNewProduct = (
       try {
         await client.query("BEGIN");
         const createProductQuery =
-          "INSERT INTO products(name, brand_id, description) VALUES ($1, $2, $3) RETURNING id";
+          "INSERT INTO products(name, base_id, description) VALUES ($1, $2, $3) RETURNING id";
         const res = await client.query(createProductQuery, [
           productName,
-          brandId,
+          baseProductId,
           description,
         ]);
         const createProductStockLevelQuery =
@@ -161,12 +159,6 @@ export const createNewProduct = (
           res.rows[0].id,
           price.toFixed(2),
         ]);
-        for await (const productTypeId of productTypeIds) {
-          await client.query(
-            "INSERT INTO assigned_product_type(product_id, type_id) VALUES($1, $2)",
-            [res.rows[0].id, productTypeId]
-          );
-        }
         await client.query("COMMIT");
         transactionStatus = EDatabaseResponses.OK;
       } catch (err) {
