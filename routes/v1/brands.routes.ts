@@ -11,7 +11,7 @@ import {
 } from "../../common/response-types";
 import { EDatabaseResponses } from "../../data/data";
 import { EAccountTypes, verifyToken } from "../../security/security";
-import { getProductsByBrand } from "../../models/product.models";
+import { getProductsByBrand } from "../../models/products/product.models";
 
 export const brandRouter = Router();
 
