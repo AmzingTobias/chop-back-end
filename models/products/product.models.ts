@@ -7,6 +7,7 @@ import {
 export interface IBaseProductEntry {
   id: number;
   name: string;
+  description?: string;
   available: boolean;
   stock_count: number;
   price: number;
@@ -207,7 +208,10 @@ export const getProductsByType = (
     SELECT 
         products.id AS "id", 
         products.name AS "name", 
+        products.description AS "description",
         products.available, 
+        COALESCE(brands.name, '') AS "brandName",
+        brands.id AS "brandId",
         product_stock_levels.amount AS "stock_count", 
         product_prices.price::money::numeric::float8
     FROM products
@@ -216,7 +220,8 @@ export const getProductsByType = (
         JOIN product_prices ON products.id = product_prices.product_id
         JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
         JOIN product_stock_levels ON products.id = product_stock_levels.product_id
-    WHERE assigned_product_type.type_id = $1
+        LEFT JOIN brands ON base_products.brand_id = brands.id
+      WHERE assigned_product_type.type_id = $1
     `;
     pool.query(
       getProductsForTypeQuery,
@@ -299,8 +304,8 @@ export const getDetailedProductInfo = (
         products.id AS "id",
         products.name AS "name",
         products.available,
-        COALESCE(brands.name, '') AS "brand_name",
-        brands.id AS "brand_id",
+        COALESCE(brands.name, '') AS "brandName",
+        brands.id AS "brandId",
         product_stock_levels.amount AS "stock_count",
         product_prices.price::money::numeric::float8,
         products.description

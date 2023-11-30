@@ -268,16 +268,16 @@ productTypeRouter.delete("/:id", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /brands/{id}/products:
+ * /product-types/{id}/products:
  *   get:
- *     tags: [Brands, Products]
- *     summary: Retrieve a list of products from a brand
- *     description: Retrieve a list of products from a given brand.
+ *     tags: [Product types, Products]
+ *     summary: Retrieve a list of products from a product type
+ *     description: Retrieve a list of products from a given product type.
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The id of the brand to get the products for
+ *         description: The id of the product type to get the products for
  *         schema:
  *           type: integer
  *     responses:
@@ -294,6 +294,9 @@ productTypeRouter.delete("/:id", verifyToken, async (req, res) => {
  *               name:
  *                 type: string
  *                 description: The name of the product.
+ *               description:
+ *                 type: string
+ *                 description: The description of the product
  *               available:
  *                 type: boolean
  *                 description: If the product is available to be purchased.
