@@ -12,6 +12,7 @@ import path from "path";
 import { expressProductImagePath, imageRouter } from "./routes/v1/image.routes";
 import cors from "cors";
 import { baseProductRouter } from "./routes/v1/products/base-product.routes";
+import { productFilterRouter } from "./routes/v1/products/filters.routes";
 
 // Swagger Docs
 const swaggerSpecv1 = swaggerJSDoc({
@@ -48,6 +49,7 @@ app.use(
 // Routes
 app.use("/v1/auth", authRouter);
 app.use("/v1/products/base", baseProductRouter);
+app.use("/v1/products/filters", productFilterRouter);
 app.use("/v1/products", productRouter);
 app.use("/v1/product-types", productTypeRouter);
 app.use("/v1/brands", brandRouter);
