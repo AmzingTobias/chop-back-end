@@ -1,8 +1,5 @@
 import pool, { EDatabaseResponses, ICustomError } from "../../data/data";
-import {
-  FOREIGN_KEY_VIOLATION,
-  UNIQUE_CONSTRAINT_FAILED,
-} from "../../common/postgresql-error-codes";
+import { FOREIGN_KEY_VIOLATION } from "../../common/postgresql-error-codes";
 
 export interface IBaseProductEntry {
   id: number;
@@ -107,7 +104,7 @@ export const createNewProductVariant = (
       try {
         await client.query("BEGIN");
         const createProductQuery =
-          "INSERT INTO products(name, base_id, description) VALUES ($1, $2, $3) RETURNING id";
+          "INSERT INTO products(name, base_product_id, description) VALUES ($1, $2, $3) RETURNING id";
         const res = await client.query(createProductQuery, [
           productName,
           baseProductId,
@@ -196,32 +193,18 @@ export const getProductsByType = (
 ): Promise<IBaseProductEntry[]> => {
   return new Promise((resolve, reject) => {
     const getProductsForTypeQuery = `
-    WITH LatestPrice AS (
-      SELECT
-          product_id,
-          MAX(date_active_from) AS max_date
-      FROM
-          product_prices
-      GROUP BY
-          product_id
-    )
-    SELECT 
-        products.id AS "id", 
-        products.name AS "name", 
-        products.description AS "description",
-        products.available, 
-        COALESCE(brands.name, '') AS "brandName",
-        brands.id AS "brandId",
-        product_stock_levels.amount AS "stock_count", 
-        product_prices.price::money::numeric::float8
-    FROM products
-        JOIN base_products ON products.base_product_id = base_products.id
-        JOIN assigned_product_type ON base_products.id = assigned_product_type.product_id
-        JOIN product_prices ON products.id = product_prices.product_id
-        JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
-        JOIN product_stock_levels ON products.id = product_stock_levels.product_id
-        LEFT JOIN brands ON base_products.brand_id = brands.id
-      WHERE assigned_product_type.type_id = $1
+    SELECT
+      id, 
+      name, 
+      description,
+      "brandId",
+      "brandName",
+      available, 
+      stock_count, 
+      price::money::numeric::float8
+    FROM product_view
+    JOIN assigned_product_type ON base_product_id = assigned_product_type.product_id
+    WHERE assigned_product_type.type_id = $1
     `;
     pool.query(
       getProductsForTypeQuery,
@@ -248,27 +231,14 @@ export const getProductsByBrand = (
 ): Promise<IBaseProductEntry[]> => {
   return new Promise((resolve, reject) => {
     const getProductsForTypeQuery = `
-    WITH LatestPrice AS (
-      SELECT
-          product_id,
-          MAX(date_active_from) AS max_date
-      FROM
-          product_prices
-      GROUP BY
-          product_id
-    )
     SELECT 
-        products.id AS "id", 
-        products.name AS "name", 
-        products.available, 
-        product_stock_levels.amount AS "stock_count", 
-        product_prices.price::money::numeric::float8
-    FROM products
-        JOIN base_products ON products.base_product_id = base_products.id
-        JOIN product_prices ON products.id = product_prices.product_id
-        JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
-        JOIN product_stock_levels ON products.id = product_stock_levels.product_id
-    WHERE base_products.brand_id = $1
+        id, 
+        name, 
+        available, 
+        stock_count, 
+        price::money::numeric::float8
+    FROM product_view
+    WHERE "brandId" = $1
     `;
     pool.query(getProductsForTypeQuery, [brandId], (err: ICustomError, res) => {
       if (err) {
@@ -291,32 +261,17 @@ export const getDetailedProductInfo = (
 ): Promise<IProductEntry[]> => {
   return new Promise((resolve, reject) => {
     const getProductsForTypeQuery = `
-    WITH LatestPrice AS (
-      SELECT
-          product_id,
-          MAX(date_active_from) AS max_date
-      FROM
-          product_prices
-      GROUP BY
-          product_id
-    )
-    SELECT
-        products.id AS "id",
-        products.name AS "name",
-        products.available,
-        COALESCE(brands.name, '') AS "brandName",
-        brands.id AS "brandId",
-        product_stock_levels.amount AS "stock_count",
-        product_prices.price::money::numeric::float8,
-        products.description
-    FROM products
-        JOIN base_products ON products.base_product_id = base_products.id
-        JOIN product_prices ON products.id = product_prices.product_id
-        JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
-        JOIN product_stock_levels ON products.id = product_stock_levels.product_id
-        LEFT JOIN brands ON base_products.brand_id = brands.id
-    WHERE products.id = $1
-  
+    SELECT 
+      id, 
+      name, 
+      available, 
+      "brandName",
+      "brandId",
+      stock_count, 
+      price::money::numeric::float8,
+      description
+    FROM product_view
+    WHERE id = $1
     `;
     pool.query(
       getProductsForTypeQuery,
@@ -344,28 +299,17 @@ export const getRandomNumberOfProducts = (
   return new Promise((resolve, reject) => {
     pool.query(
       `
-      WITH LatestPrice AS (
-        SELECT
-            product_id,
-            MAX(date_active_from) AS max_date
-        FROM
-            product_prices
-        GROUP BY
-            product_id
-      )
       SELECT 
-          products.id AS "id", 
-          products.name AS "name", 
-          products.available, 
-          product_stock_levels.amount AS "stock_count", 
-          product_prices.price::money::numeric::float8
-      FROM products
-          JOIN product_prices ON products.id = product_prices.product_id
-          JOIN LatestPrice ON products.id = LatestPrice.product_id AND product_prices.date_active_from = max_date
-          JOIN product_stock_levels ON products.id = product_stock_levels.product_id
+        id, 
+        name, 
+        available, 
+        stock_count, 
+        price::money::numeric::float8
+      FROM product_view
       ORDER BY RANDOM()
-      LIMIT ${numberOfProductsToGet}
+      LIMIT $1
     `,
+      [numberOfProductsToGet],
       (err: ICustomError, res) => {
         if (err) {
           console.error(`${err.code}: ${err.message}`);
