@@ -1,8 +1,5 @@
 import pool, { EDatabaseResponses, ICustomError } from "../../data/data";
-import {
-  FOREIGN_KEY_VIOLATION,
-  UNIQUE_CONSTRAINT_FAILED,
-} from "../../common/postgresql-error-codes";
+import { FOREIGN_KEY_VIOLATION } from "../../common/postgresql-error-codes";
 
 export interface IBaseProductEntry {
   id: number;
@@ -107,7 +104,7 @@ export const createNewProductVariant = (
       try {
         await client.query("BEGIN");
         const createProductQuery =
-          "INSERT INTO products(name, base_id, description) VALUES ($1, $2, $3) RETURNING id";
+          "INSERT INTO products(name, base_product_id, description) VALUES ($1, $2, $3) RETURNING id";
         const res = await client.query(createProductQuery, [
           productName,
           baseProductId,
