@@ -321,3 +321,38 @@ export const getRandomNumberOfProducts = (
     );
   });
 };
+
+/**
+ * Get a list of products based on their name, using a search query
+ * @param searchQuery The search query to use to get a list of products
+ * @returns A promise of a list of prooduct entries. Rejects on database errors
+ */
+export const getProductsByName = (
+  searchQuery: string
+): Promise<IProductEntry[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT 
+      id, 
+      name, 
+      available, 
+      "brandName",
+      "brandId",
+      stock_count, 
+      price::money::numeric::float8,
+      description
+    FROM product_view
+    WHERE to_tsvector(name) @@ websearch_to_tsquery($1) ORDER BY ts_rank(to_tsvector(name),  websearch_to_tsquery($1)) desc
+    `,
+      [searchQuery],
+      (err, res) => {
+        if (err) {
+          console.error(err);
+          return reject(err);
+        }
+        resolve(res.rows as IProductEntry[]);
+      }
+    );
+  });
+};

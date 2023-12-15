@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createNewProductVariant,
   getDetailedProductInfo,
+  getProductsByName,
   getRandomNumberOfProducts,
   setPriceForProduct,
   updateProductDescription,
@@ -15,6 +16,77 @@ import { EDatabaseResponses } from "../../../data/data";
 import { EAccountTypes, verifyToken } from "../../../security/security";
 
 export const productRouter = Router();
+
+/**
+ * @swagger
+ * /products/:
+ *   get:
+ *     tags: [Products]
+ *     summary: Search for a product using a search query
+ *     description: Retrieve detailed information regarding a specific product.
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         required: true
+ *         description: The search query to use. Must be greater than or equal to 3 characters
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: A list of products that matched to the search
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *              id:
+ *                type: integer
+ *                description: The id of the product.
+ *              name:
+ *                type: string
+ *                description: The name of the product.
+ *              available:
+ *                type: boolean
+ *                description: If the product is available to be purchased.
+ *              stock_count:
+ *                type: number
+ *                description: The stock count for the product.
+ *              price:
+ *                type: number
+ *                description: The price for the product.
+ *              brandName:
+ *                type: string
+ *                description: The name of the brand for the product, if one exists.
+ *              brandId:
+ *                type: number | null
+ *                description: The id of the brand the product belongs to, null otherwise.
+ *              description:
+ *                type: string | null
+ *                description: A description about the product if one exists, null otherwise.
+ *       400:
+ *          description: Request was invalid
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.get("/", (req, res) => {
+  const { search: searchQuery } = req.query;
+  if (typeof searchQuery === "string") {
+    if (searchQuery.length >= 2) {
+      return getProductsByName(searchQuery.trim())
+        .then((searchResult) => {
+          return res.json(searchResult);
+        })
+        .catch(() => {
+          return res
+            .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+            .send(ETextResponse.INTERNAL_ERROR);
+        });
+    } else {
+      return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+    }
+  }
+  return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+});
 
 /**
  * @swagger
