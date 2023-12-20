@@ -356,3 +356,20 @@ export const getProductsByName = (
     );
   });
 };
+
+/**
+ * Get a list of all product ids
+ * @returns A promise with a list of all product ids. Rejects on database errors
+ */
+export const getAllProductIds = (): Promise<{ id: number }[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query("SELECT id FROM products", (err, res) => {
+      if (err) {
+        console.error(err);
+        reject(err);
+      } else {
+        resolve(res.rows as { id: number }[]);
+      }
+    });
+  });
+};

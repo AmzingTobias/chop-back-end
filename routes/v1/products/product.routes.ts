@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createNewProductVariant,
+  getAllProductIds,
   getDetailedProductInfo,
   getProductsByName,
   getRandomNumberOfProducts,
@@ -86,6 +87,39 @@ productRouter.get("/", (req, res) => {
     }
   }
   return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+});
+
+/**
+ * @swagger
+ * /products/all:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get a list of all product ids
+ *     description: Get a list of all the product ids in the system
+ *     responses:
+ *       200:
+ *         description: A list of product ids
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *              id:
+ *                type: integer
+ *                description: The id of the product.
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.get("/all", (_, res) => {
+  return getAllProductIds()
+    .then((productIds) => {
+      return res.json(productIds);
+    })
+    .catch(() => {
+      return res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    });
 });
 
 /**
