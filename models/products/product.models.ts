@@ -373,3 +373,34 @@ export const getAllProductIds = (): Promise<{ id: number }[]> => {
     });
   });
 };
+
+/**
+ * Using a product Id, find all products that share the same base id as that product id
+ * @param productId The Id of the product to find all similar styles of products for
+ * @returns A promise for a list of products that are different variants of the product Id. Rejects on database errors
+ */
+export const getProductsOfSameStyle = (
+  productId: number
+): Promise<IProductEntry[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `SELECT 
+      id, 
+      name, 
+      available, 
+      stock_count, 
+      price::money::numeric::float8
+      FROM product_view
+      WHERE base_product_id = (SELECT base_product_id FROM products WHERE products.id = $1)`,
+      [productId],
+      (err, res) => {
+        if (err) {
+          console.error(err);
+          reject(err);
+        } else {
+          resolve(res.rows as IProductEntry[]);
+        }
+      }
+    );
+  });
+};
