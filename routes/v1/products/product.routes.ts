@@ -1,8 +1,10 @@
 import { Router } from "express";
 import {
   createNewProductVariant,
+  getAllProductIds,
   getDetailedProductInfo,
   getProductsByName,
+  getProductsOfSameStyle,
   getRandomNumberOfProducts,
   setPriceForProduct,
   updateProductDescription,
@@ -86,6 +88,100 @@ productRouter.get("/", (req, res) => {
     }
   }
   return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+});
+
+/**
+ * @swagger
+ * /products/all:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get a list of all product ids
+ *     description: Get a list of all the product ids in the system
+ *     responses:
+ *       200:
+ *         description: A list of product ids
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *              id:
+ *                type: integer
+ *                description: The id of the product.
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.get("/all", (_, res) => {
+  return getAllProductIds()
+    .then((productIds) => {
+      return res.json(productIds);
+    })
+    .catch(() => {
+      return res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    });
+});
+
+/**
+ * @swagger
+ * /products/styles/{id}:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get similar styled products using a product id
+ *     description: Get all products that share the same base product, using a product id
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The product id to get similar styled products for
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: A list of products that are of the same style as the product id
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *              id:
+ *                type: integer
+ *                description: The id of the product.
+ *              name:
+ *                type: string
+ *                description: The name of the product.
+ *              available:
+ *                type: boolean
+ *                description: If the product is available to be purchased.
+ *              stock_count:
+ *                type: number
+ *                description: The stock count for the product.
+ *              price:
+ *                type: number
+ *                description: The price for the product.
+ *       400:
+ *          description: Request was invalid
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.get("/styles/:id", (req, res) => {
+  const { id } = req.params;
+  if (!Number.isNaN(Number(id))) {
+    return getProductsOfSameStyle(Number(id))
+      .then((products) => {
+        return res.json(products);
+      })
+      .catch((_) => {
+        return res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+      });
+  } else {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
 });
 
 /**
