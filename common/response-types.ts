@@ -53,7 +53,9 @@ export enum ETextResponse {
   ADDRESS_CREATED = "Address created",
   ADDRESS_REMOVED = "Address deleted",
   ADDRESS_UPDATED = "Address updated",
+  ADDRESS_ID_NOT_EXIST = "Address does not exist",
   SET_DEFAULT_ADDRESS = "Default address set",
   DEFAULT_ADDRESS_REMOVED = "Default address removed",
+  DEFAULT_ADDRESS_NOT_EXIST = "No default address is set",
   ADDRESS_COUNTRY_ID_INVALID = "Country Id is not supported",
 }
