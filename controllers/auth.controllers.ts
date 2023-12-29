@@ -14,7 +14,7 @@ import {
   EAccountTypeTables,
   getUserWithEmail,
   isAccountOfType,
-} from "../models/auth.models";
+} from "../models/auth/auth.models";
 
 /**
  * Create an account

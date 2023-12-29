@@ -3,21 +3,21 @@ import {
   EAccountTypeTables,
   get_account_details,
   update_account_password,
-} from "../../models/auth.models";
+} from "../../../models/auth/auth.models";
 import {
   create_account_controller,
   login_to_account_controller,
-} from "../../controllers/auth.controllers";
+} from "../../../controllers/auth.controllers";
 import {
   EAccountTypes,
   hashPassword,
   verifyToken,
-} from "../../security/security";
+} from "../../../security/security";
 import {
   EResponseStatusCodes,
   ETextResponse,
-} from "../../common/response-types";
-import { EDatabaseResponses } from "../../data/data";
+} from "../../../common/response-types";
+import { EDatabaseResponses } from "../../../data/data";
 
 export const authRouter = Router();
 
