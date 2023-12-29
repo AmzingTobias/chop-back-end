@@ -49,4 +49,11 @@ export enum ETextResponse {
   FILE_REMOVED = "File removed",
   FILE_ID_NOT_VALID = "File id not valid",
   IMAGE_SORT_ORDER_UPDATED = "Image sort order updated",
+  // Addresses
+  ADDRESS_CREATED = "Address created",
+  ADDRESS_REMOVED = "Address deleted",
+  ADDRESS_UPDATED = "Address updated",
+  SET_DEFAULT_ADDRESS = "Default address set",
+  DEFAULT_ADDRESS_REMOVED = "Default address removed",
+  ADDRESS_COUNTRY_ID_INVALID = "Country Id is not supported",
 }
