@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { Request, Response, NextFunction } from "express";
 import { EResponseStatusCodes, ETextResponse } from "../common/response-types";
-import { EAccountTypeTables } from "../models/auth.models";
+import { EAccountTypeTables } from "../models/auth/auth.models";
 
 // Order should not be changed as it will interfere with existing tokens
 export const enum EAccountTypes {

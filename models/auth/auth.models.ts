@@ -1,5 +1,5 @@
-import { UNIQUE_CONSTRAINT_FAILED } from "../common/postgresql-error-codes";
-import pool, { EDatabaseResponses, ICustomError } from "../data/data";
+import { UNIQUE_CONSTRAINT_FAILED } from "../../common/postgresql-error-codes";
+import pool, { EDatabaseResponses, ICustomError } from "../../data/data";
 
 // Type representing an entry found in the accounts table
 type TAccountEntry = {
