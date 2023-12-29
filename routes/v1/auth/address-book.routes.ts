@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createNewShippingAddress,
+  getAllAddressesForCustomer,
   getCountriesAvailableForShipping,
 } from "../../../models/auth/address-book.model";
 import {
@@ -11,6 +12,73 @@ import { EAccountTypes, verifyToken } from "../../../security/security";
 import { EDatabaseResponses } from "../../../data/data";
 
 export const addressBookRouter = Router();
+
+/**
+ * @swagger
+ * /auth/address/:
+ *   get:
+ *     tags: [Address]
+ *     summary: Get all countries available for shipping
+ *     description: Get all countries that can be shipped to
+ *     responses:
+ *       200:
+ *          description: A list of all countries that can be shipped to
+ *          schema:
+ *            type: array
+ *            items:
+ *              type: object
+ *              properties:
+ *                id:
+ *                  type: integer
+ *                  description: The id of the shipping address
+ *                  example: 1
+ *                areaCode:
+ *                  type: string
+ *                  description: The area code of the shipping address.
+ *                  example: EC1A 1BB
+ *                firstAddressLine:
+ *                  type: string
+ *                  description: The first line of the address.
+ *                  example: 123 The Street
+ *                secondAddressLine:
+ *                  type: string | null
+ *                  description: The second line of the address if it exists.
+ *                countryState:
+ *                  type: string
+ *                  description: The state / county the address is in
+ *                  example: London
+ *                countryId:
+ *                  type: number
+ *                  description: The id of the country the address is in
+ *                  example: 1
+ *                countryName:
+ *                  type: string
+ *                  description: The name of the country the address is in
+ *                  example: United Kingdom
+ *       401:
+ *          description: Account is not a customer
+ *       500:
+ *          description: Internal server error
+ */
+addressBookRouter.get("/", verifyToken, (req, res) => {
+  if (
+    req.user === undefined ||
+    req.user.accountType !== EAccountTypes.customer
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  getAllAddressesForCustomer(req.user.accountTypeId)
+    .then((addresses) => {
+      return res.json(addresses);
+    })
+    .catch((_) => {
+      return res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    });
+});
 
 /**
  * @swagger
@@ -122,14 +190,13 @@ addressBookRouter.post("/new", verifyToken, (req, res) => {
     typeof state === "string" &&
     typeof countryId === "number"
   ) {
-    createNewShippingAddress(
-      req.user.accountTypeId,
-      areaCode,
-      firstAddressLine,
-      state,
-      countryId,
-      secondAddressLine
-    )
+    createNewShippingAddress(req.user.accountTypeId, {
+      areaCode: areaCode,
+      firstAddressLine: firstAddressLine,
+      countryState: state,
+      countryId: countryId,
+      secondAddressLine: secondAddressLine,
+    })
       .then((databaseCode) => {
         switch (databaseCode) {
           case EDatabaseResponses.OK:
