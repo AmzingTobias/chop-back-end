@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { CookieOptions, Request, Response } from "express";
 import {
   EAccountTypes,
   account_table_to_account_type,
@@ -15,6 +15,13 @@ import {
   getUserWithEmail,
   isAccountOfType,
 } from "../models/auth/auth.models";
+
+export const COOKIE_OPTIONS: CookieOptions = {
+  httpOnly: true,
+  domain: process.env.COOKIE_DOMAIN,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+};
 
 /**
  * Create an account
@@ -102,15 +109,7 @@ export const login_to_account_controller = async (
                           accountType,
                           accountOfType.accountTypeId
                         ),
-                        {
-                          httpOnly: true,
-                          domain:
-                            process.env.NODE_ENV === "production"
-                              ? ".chop.tdmd.co.uk"
-                              : "localhost",
-                          secure: process.env.NODE_ENV === "production",
-                          sameSite: "lax",
-                        }
+                        COOKIE_OPTIONS
                       );
                       res.json({ success: true });
                     } else {

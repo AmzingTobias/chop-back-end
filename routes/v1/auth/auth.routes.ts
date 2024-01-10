@@ -5,6 +5,7 @@ import {
   update_account_password,
 } from "../../../models/auth/auth.models";
 import {
+  COOKIE_OPTIONS,
   create_account_controller,
   login_to_account_controller,
 } from "../../../controllers/auth.controllers";
@@ -20,6 +21,21 @@ import {
 import { EDatabaseResponses } from "../../../data/data";
 
 export const authRouter = Router();
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     tags: [Accounts]
+ *     summary: Logout of an account
+ *     responses:
+ *       200:
+ *          description: Logout succesful
+ */
+authRouter.post("/logout", (_, res) => {
+  res.clearCookie("auth", COOKIE_OPTIONS);
+  res.send(ETextResponse.LOGOUT_SUCCESFUL);
+});
 
 /**
  * @swagger
