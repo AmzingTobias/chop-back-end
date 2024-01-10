@@ -95,13 +95,24 @@ export const login_to_account_controller = async (
                     const accountType =
                       account_table_to_account_type(accountTableType);
                     if (accountType !== undefined) {
-                      res.json({
-                        token: createJWTForUser(
+                      res.cookie(
+                        "auth",
+                        createJWTForUser(
                           account.id,
                           accountType,
                           accountOfType.accountTypeId
                         ),
-                      });
+                        {
+                          httpOnly: true,
+                          domain:
+                            process.env.NODE_ENV === "production"
+                              ? ".chop.tdmd.co.uk"
+                              : "localhost",
+                          secure: process.env.NODE_ENV === "production",
+                          sameSite: "lax",
+                        }
+                      );
+                      res.json({ success: true });
                     } else {
                       res
                         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
