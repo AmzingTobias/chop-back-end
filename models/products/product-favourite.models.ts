@@ -109,7 +109,7 @@ export const getAllProductsMarkedAsFavourite = (
 ): Promise<{ productId: number }[]> => {
   return new Promise((resolve, reject) => {
     pool.query(
-      `SELECT product_id AS productId FROM customer_favourite_products WHERE customer_id = $1`,
+      `SELECT product_id AS "productId" FROM customer_favourite_products WHERE customer_id = $1`,
       [customerId],
       (err, res) => {
         if (err) {
