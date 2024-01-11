@@ -14,6 +14,7 @@ import cors from "cors";
 import { baseProductRouter } from "./routes/v1/products/base-product.routes";
 import { productFilterRouter } from "./routes/v1/products/filters.routes";
 import { addressBookRouter } from "./routes/v1/auth/address-book.routes";
+import { productQuestionsRouter } from "./routes/v1/products/product-questions.routes";
 
 // Swagger Docs
 const swaggerSpecv1 = swaggerJSDoc({
@@ -53,6 +54,7 @@ app.use("/v1/auth", authRouter);
 
 app.use("/v1/products/filters", productFilterRouter);
 app.use("/v1/products/base", baseProductRouter);
+app.use("/v1/products/questions", productQuestionsRouter);
 app.use("/v1/products", productRouter);
 
 app.use("/v1/product-types", productTypeRouter);

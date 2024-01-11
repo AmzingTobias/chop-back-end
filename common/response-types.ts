@@ -36,6 +36,15 @@ export enum ETextResponse {
   PRODUCT_UPDATED = "Product updated",
   PRODUCT_DELETED = "Product deleted",
   PRODUCT_PRICE_SET = "Product price set",
+  // Product questions
+  PRODUCT_QUESTION_CREATED = "Question created",
+  PRODUCT_QUESTION_ID_NOT_EXISTS = "Question does not exist",
+  PRODUCT_QUESTION_ANSWER_PROVIDED = "Answer provided",
+  PRODUCT_QUESTION_ANSWER_RATED = "Answer rated",
+  PRODUCT_QUESTION_ANSWER_RATED_REMOVED = "Answer rating removed",
+  PRODUCT_QUESTION_EDITED = "Product question altered",
+  PRODUCT_QUESTION_DELETED = "Product question deleted",
+  PRODUCT_QUESTION_ANSWER_ID_NOT_EXIST = "Question answer does not exist",
   // Authentication
   INVALID_AUTH_TOKEN = "Invalid token",
   ACCOUNT_DETAILS_INVALID = "Account details invalid",
