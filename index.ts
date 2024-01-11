@@ -15,6 +15,7 @@ import { baseProductRouter } from "./routes/v1/products/base-product.routes";
 import { productFilterRouter } from "./routes/v1/products/filters.routes";
 import { addressBookRouter } from "./routes/v1/auth/address-book.routes";
 import { productQuestionsRouter } from "./routes/v1/products/product-questions.routes";
+import { orderRouter } from "./routes/v1/orders.routes";
 
 // Swagger Docs
 const swaggerSpecv1 = swaggerJSDoc({
@@ -60,6 +61,7 @@ app.use("/v1/products", productRouter);
 app.use("/v1/product-types", productTypeRouter);
 app.use("/v1/brands", brandRouter);
 app.use("/v1/images", imageRouter);
+app.use("/v1/orders", orderRouter);
 
 // Docs
 app.use(
