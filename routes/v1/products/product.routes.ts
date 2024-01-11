@@ -16,6 +16,12 @@ import {
 } from "../../../common/response-types";
 import { EDatabaseResponses } from "../../../data/data";
 import { EAccountTypes, verifyToken } from "../../../security/security";
+import {
+  getAllProductsMarkedAsFavourite,
+  hasProductBeenFavourited,
+  removeProductAsFavourite,
+  setProductAsFavourite,
+} from "../../../models/products/product-favourite.models";
 
 export const productRouter = Router();
 
@@ -240,6 +246,46 @@ productRouter.get("/random", async (req, res) => {
 
 /**
  * @swagger
+ * /products/favourite:
+ *   get:
+ *     tags: [Products, Favourite products]
+ *     summary: Retrieve a list of all favourited products for a customer
+ *     responses:
+ *       200:
+ *         description: A list of products marked as favourite.
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: The id of the product.
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.get("/favourite", verifyToken, async (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  try {
+    const products = await getAllProductsMarkedAsFavourite(
+      req.user.accountTypeId
+    );
+    res.json(products);
+  } catch (err) {
+    res
+      .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+      .send(ETextResponse.INTERNAL_ERROR);
+  }
+});
+
+/**
+ * @swagger
  * /products/{id}:
  *   get:
  *     tags: [Products]
@@ -296,6 +342,192 @@ productRouter.get("/:id", async (req, res) => {
         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
         .send(ETextResponse.INTERNAL_ERROR);
     }
+  }
+});
+
+/**
+ * @swagger
+ * /products/{id}/favourite:
+ *   get:
+ *     tags: [Products, Favourite products]
+ *     summary: Get if a product has been favourited
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: An object with details of the products.
+ *         schema:
+ *           type: object
+ *           properties:
+ *             favourited:
+ *               type: boolean
+ *               description: True if the product has been favourited, false otherwise
+ *       400:
+ *          description: Product id in request invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.get("/:id/favourite", verifyToken, async (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
+  const { id } = req.params;
+  if (!Number.isNaN(Number(id))) {
+    try {
+      const products = await hasProductBeenFavourited(
+        req.user.accountTypeId,
+        Number(id)
+      );
+      return res.json({ favourited: products });
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } else {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.PRODUCT_ID_NOT_EXISTS);
+  }
+});
+
+/**
+ * @swagger
+ * /products/{id}/favourite:
+ *   post:
+ *     tags: [Products, Favourite products]
+ *     summary: Mark a product as favourite
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       201:
+ *         description: Product marked as favourite
+ *       400:
+ *          description: Product id in request invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       409:
+ *          description: Product already marked as favourite
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.post("/:id/favourite", verifyToken, async (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
+  const { id } = req.params;
+  if (!Number.isNaN(Number(id))) {
+    try {
+      const response = await setProductAsFavourite(
+        req.user.accountTypeId,
+        Number(id)
+      );
+      switch (response) {
+        case EDatabaseResponses.OK:
+          return res
+            .status(EResponseStatusCodes.CREATED_CODE)
+            .send(ETextResponse.PRODUCT_FAVOURITE_SET);
+        case EDatabaseResponses.CONFLICT:
+          return res
+            .status(EResponseStatusCodes.CONFLICT_CODE)
+            .send(ETextResponse.PRODUCT_ALREADY_FAVOURITE);
+        case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
+          return res
+            .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+            .send(ETextResponse.PRODUCT_ID_NOT_EXISTS);
+        default:
+          return res
+            .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+            .send(ETextResponse.INTERNAL_ERROR);
+      }
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } else {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.PRODUCT_ID_NOT_EXISTS);
+  }
+});
+
+/**
+ * @swagger
+ * /products/{id}/favourite:
+ *   delete:
+ *     tags: [Products, Favourite products]
+ *     summary: Remove a product as favourite
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       201:
+ *         description: Product unset as favourite
+ *       400:
+ *          description: Product id in request invalid, or product was never favourited
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.delete("/:id/favourite", verifyToken, async (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+
+  const { id } = req.params;
+  if (!Number.isNaN(Number(id))) {
+    try {
+      const response = await removeProductAsFavourite(
+        req.user.accountTypeId,
+        Number(id)
+      );
+      switch (response) {
+        case EDatabaseResponses.OK:
+          return res.send(ETextResponse.PRODUCT_FAVOURITE_REMOVED);
+        case EDatabaseResponses.DOES_NOT_EXIST:
+          return res
+            .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+            .send(ETextResponse.PRODUCT_FAVOURITE_NOT_SET);
+        default:
+          return res
+            .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+            .send(ETextResponse.INTERNAL_ERROR);
+      }
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    }
+  } else {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.PRODUCT_ID_NOT_EXISTS);
   }
 });
 

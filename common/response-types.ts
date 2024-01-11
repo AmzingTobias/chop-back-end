@@ -36,6 +36,11 @@ export enum ETextResponse {
   PRODUCT_UPDATED = "Product updated",
   PRODUCT_DELETED = "Product deleted",
   PRODUCT_PRICE_SET = "Product price set",
+  // Product favourites
+  PRODUCT_FAVOURITE_SET = "Product marked as favourite",
+  PRODUCT_ALREADY_FAVOURITE = "Product already marked as favourite",
+  PRODUCT_FAVOURITE_NOT_SET = "Product was never set as favourite",
+  PRODUCT_FAVOURITE_REMOVED = "Product no longer favourited",
   // Product questions
   PRODUCT_QUESTION_CREATED = "Question created",
   PRODUCT_QUESTION_ID_NOT_EXISTS = "Question does not exist",
