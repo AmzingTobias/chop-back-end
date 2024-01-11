@@ -16,6 +16,7 @@ import { productFilterRouter } from "./routes/v1/products/filters.routes";
 import { addressBookRouter } from "./routes/v1/auth/address-book.routes";
 import { productQuestionsRouter } from "./routes/v1/products/product-questions.routes";
 import { orderRouter } from "./routes/v1/orders.routes";
+import productReviewsRouter from "./routes/v1/products/product-reviews.routes";
 
 // Swagger Docs
 const swaggerSpecv1 = swaggerJSDoc({
@@ -53,6 +54,7 @@ app.use(
 app.use("/v1/auth/address", addressBookRouter);
 app.use("/v1/auth", authRouter);
 
+app.use("/v1/products/reviews", productReviewsRouter);
 app.use("/v1/products/filters", productFilterRouter);
 app.use("/v1/products/base", baseProductRouter);
 app.use("/v1/products/questions", productQuestionsRouter);
