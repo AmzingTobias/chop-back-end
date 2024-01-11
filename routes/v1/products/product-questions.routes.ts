@@ -526,7 +526,7 @@ productQuestionsRouter.post("/answer", verifyToken, (req, res) => {
  *         required: true
  *         description: The id of the product the question is for
  *         schema:
- *           type: string
+ *           type: number
  *       - in: body
  *         name: question
  *         required: true
