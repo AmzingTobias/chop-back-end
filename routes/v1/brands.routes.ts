@@ -3,6 +3,7 @@ import {
   createNewBrand as createBrand,
   deleteBrand,
   getAllBrands,
+  getBrand,
   updateBrand,
 } from "../../models/brands.models";
 import {
@@ -196,6 +197,63 @@ brandRouter.put("/:id", verifyToken, async (req, res) => {
     res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  } else {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+});
+
+/**
+ * @swagger
+ * /brands/{id}:
+ *   get:
+ *     tags: [Brands]
+ *     summary: Get a brand
+ *     description: Get details about a brand
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the brand
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *          description: Brand details
+ *          schema:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               description: The id of the brand.
+ *               example: 1
+ *             name:
+ *               type: string
+ *               description: The name of the brand.
+ *               example: AMD
+ *       400:
+ *          description: Brand Id was invalid
+ *       500:
+ *          description: Internal server error
+ */
+brandRouter.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  if (!Number.isNaN(Number(id))) {
+    try {
+      const brand = await getBrand(Number(id));
+      if (brand === null) {
+        res
+          .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+          .send(ETextResponse.BRAND_ID_NOT_EXIST);
+      } else {
+        res.json(brand);
+      }
+    } catch (_) {
+      res
+        .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+        .send(ETextResponse.INTERNAL_ERROR);
+    }
   } else {
     res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)

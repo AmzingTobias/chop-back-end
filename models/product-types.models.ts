@@ -119,3 +119,30 @@ export const deleteProductType = (
     );
   });
 };
+
+/**
+ * Get a product type's information using an id
+ * @param productTypeId The id of the product type
+ * @returns TBrandEntry if the brand exists, null if not
+ */
+export const getProductType = (
+  productTypeId: number
+): Promise<TProductTypeEntry | null> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "SELECT id, type FROM product_types WHERE id = $1",
+      [productTypeId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          if (res.rowCount > 0) {
+            resolve(res.rows[0]);
+          } else {
+            resolve(null);
+          }
+        }
+      }
+    );
+  });
+};

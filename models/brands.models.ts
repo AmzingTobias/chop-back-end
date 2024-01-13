@@ -24,6 +24,31 @@ export const getAllBrands = (): Promise<TBrandEntry[]> => {
 };
 
 /**
+ * Get a brand's information using an id
+ * @param brandId The id of the brand
+ * @returns TBrandEntry if the brand exists, null if not
+ */
+export const getBrand = (brandId: number): Promise<TBrandEntry | null> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "SELECT id, name FROM brands WHERE id = $1",
+      [brandId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          if (res.rowCount > 0) {
+            resolve(res.rows[0]);
+          } else {
+            resolve(null);
+          }
+        }
+      }
+    );
+  });
+};
+
+/**
  * Create a new unique brand name
  * @param brandName Unique brand name
  * @returns EDatabaseResponses.OK if the brand is created,

@@ -232,11 +232,14 @@ export const getProductsByBrand = (
   return new Promise((resolve, reject) => {
     const getProductsForTypeQuery = `
     SELECT 
-        id, 
-        name, 
-        available, 
-        stock_count, 
-        price::money::numeric::float8
+      id, 
+      name, 
+      description,
+      "brandId",
+      "brandName",
+      available, 
+      stock_count, 
+      price::money::numeric::float8
     FROM product_view
     WHERE "brandId" = $1
     `;
