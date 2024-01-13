@@ -57,6 +57,8 @@ export enum ETextResponse {
   PRODUCT_QUESTION_EDITED = "Product question altered",
   PRODUCT_QUESTION_DELETED = "Product question deleted",
   PRODUCT_QUESTION_ANSWER_ID_NOT_EXIST = "Question answer does not exist",
+  // Product view history
+  PRODUCT_NOT_IN_HISTORY = "Product not in view history",
   // Authentication
   INVALID_AUTH_TOKEN = "Invalid token",
   ACCOUNT_DETAILS_INVALID = "Account details invalid",
