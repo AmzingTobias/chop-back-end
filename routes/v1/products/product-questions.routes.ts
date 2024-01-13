@@ -22,7 +22,7 @@ export const productQuestionsRouter = Router();
 
 /**
  * @swagger
- * /product/:
+ * /product/questions:
  *   put:
  *     tags: [Product questions]
  *     summary: Update a question that has been asked already
@@ -87,7 +87,7 @@ productQuestionsRouter.put("/", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /product/:
+ * /product/questions:
  *   delete:
  *     tags: [Product questions]
  *     summary: Delete a question that has been asked already
@@ -146,7 +146,7 @@ productQuestionsRouter.delete("/", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /product/answer/rating:
+ * /product/questions/answer/rating:
  *   get:
  *     tags: [Product questions]
  *     summary: Get the ratings of all answers for an answer
@@ -198,7 +198,7 @@ productQuestionsRouter.get("/answer/rating/:id", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /product/answer/rating:
+ * /product/questions/answer/rating:
  *   post:
  *     tags: [Product questions]
  *     summary: Give a rating given to an answer
@@ -268,7 +268,7 @@ productQuestionsRouter.post("/answer/rating", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /product/answer/rating:
+ * /product/questions/answer/rating:
  *   put:
  *     tags: [Product questions]
  *     summary: Update a rating given to an answer
@@ -336,7 +336,7 @@ productQuestionsRouter.put("/answer/rating", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /product/answer/rating:
+ * /product/questions/answer/rating:
  *   delete:
  *     tags: [Product questions]
  *     summary: Remove a rating given to an answer
@@ -526,7 +526,7 @@ productQuestionsRouter.post("/answer", verifyToken, (req, res) => {
  *         required: true
  *         description: The id of the product the question is for
  *         schema:
- *           type: string
+ *           type: number
  *       - in: body
  *         name: question
  *         required: true

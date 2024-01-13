@@ -41,6 +41,13 @@ export enum ETextResponse {
   PRODUCT_ALREADY_FAVOURITE = "Product already marked as favourite",
   PRODUCT_FAVOURITE_NOT_SET = "Product was never set as favourite",
   PRODUCT_FAVOURITE_REMOVED = "Product no longer favourited",
+  // Product reviews
+  PRODUCT_REVIEW_CREATED = "Product review created",
+  PRODUCT_REVIEWED_ALREADY = "You've already reviewed this product",
+  PRODUCT_REVIEW_UPDATED = "Product review updated",
+  PRODUCT_REVIEW_DELETE = "Product review deleted",
+  PRODUCT_REVIEW_ID_NOT_EXIST = "Review doesn't exist",
+  PRODUCT_REVIEW_NOT_PURCHASED = "Product has not been purchased",
   // Product questions
   PRODUCT_QUESTION_CREATED = "Question created",
   PRODUCT_QUESTION_ID_NOT_EXISTS = "Question does not exist",
