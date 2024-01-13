@@ -290,7 +290,6 @@ productReviewsRouter.delete("/:id", verifyToken, (req, res) => {
  *          description: Internal server error
  */
 productReviewsRouter.get("/", async (req, res) => {
-  console.log(req.query);
   const { product } = req.query;
   if (!Number.isNaN(Number(product))) {
     try {
