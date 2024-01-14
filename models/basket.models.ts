@@ -109,7 +109,7 @@ export const removeProductFromBasket = (
  * Update the quantity of products in a customer's basket
  * @param customerId The id of the customer
  * @param productId The id of the product
- * @param newQuantity The new quantity to have of the product (> 1)
+ * @param newQuantity The new quantity to have of the product (> 0)
  * @returns EDatabaseResponses.OK if the product quantity is updated,
  * EDatabaseResponses.DOES_NOT_EXIST if the product is not in the basket to update.
  * Rejects on database errors

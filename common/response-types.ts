@@ -59,6 +59,9 @@ export enum ETextResponse {
   PRODUCT_QUESTION_ANSWER_ID_NOT_EXIST = "Question answer does not exist",
   // Product view history
   PRODUCT_NOT_IN_HISTORY = "Product not in view history",
+  // Customer basket
+  PRODUCT_ALREADY_IN_BASKET = "Product already in basket",
+  PRODUCT_NOT_IN_BASKET = "Product not in basket",
   // Authentication
   INVALID_AUTH_TOKEN = "Invalid token",
   ACCOUNT_DETAILS_INVALID = "Account details invalid",
