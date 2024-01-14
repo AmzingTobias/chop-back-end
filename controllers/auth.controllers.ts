@@ -1,4 +1,5 @@
 import { CookieOptions, Request, Response } from "express";
+import { v4 as uuidv4 } from "uuid";
 import {
   EAccountTypes,
   account_table_to_account_type,
@@ -111,6 +112,8 @@ export const login_to_account_controller = async (
                         ),
                         COOKIE_OPTIONS
                       );
+                      const sessionId = uuidv4();
+                      res.cookie("sessionId", sessionId, COOKIE_OPTIONS); // Set a max age of one day
                       res.json({ success: true });
                     } else {
                       res

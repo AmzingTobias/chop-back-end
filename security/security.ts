@@ -73,6 +73,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: TAccountAuth;
+      sessionId: string | undefined;
     }
   }
 }

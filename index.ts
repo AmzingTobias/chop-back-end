@@ -1,7 +1,7 @@
 import express, { Express } from "express";
 import pool from "./data/data";
 import { productTypeRouter } from "./routes/v1/product-types.routes";
-
+import jwt from "jsonwebtoken";
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { brandRouter } from "./routes/v1/brands.routes";
@@ -18,6 +18,10 @@ import { productQuestionsRouter } from "./routes/v1/products/product-questions.r
 import { orderRouter } from "./routes/v1/orders.routes";
 import productReviewsRouter from "./routes/v1/products/product-reviews.routes";
 import productViewHistoryRouter from "./routes/v1/products/product-view-history.routes";
+import expressWs from "express-ws";
+import basketRouter from "./routes/v1/basket.routes";
+import { TAccountAuth } from "./security/security";
+import { EResponseStatusCodes } from "./common/response-types";
 
 // Swagger Docs
 const swaggerSpecv1 = swaggerJSDoc({
@@ -35,6 +39,8 @@ const swaggerSpecv1 = swaggerJSDoc({
 const app: Express = express();
 const port = process.env.PORT;
 
+app.use(express.json());
+app.use(cookieParser());
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN,
@@ -42,8 +48,52 @@ app.use(
   })
 );
 
-app.use(express.json());
-app.use(cookieParser());
+// Middleware to take the session id from cookies, if it exists, and add it to the request
+app.use(
+  (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const sessionId: string | undefined = req.cookies["sessionId"];
+    req.sessionId = sessionId;
+    next();
+  }
+);
+
+// Setup websocket connetion support
+expressWs(app, undefined, {
+  wsOptions: {
+    verifyClient: function (info, cb) {
+      const cookieString = info.req.headers.cookie;
+      const cookies: { [key: string]: string } = {};
+      // Verify a user's authentication
+      if (cookieString) {
+        cookieString.split(";").forEach((cookie) => {
+          const parts = cookie.split("=");
+          const key = parts[0].trim();
+          const value = parts[1]?.trim() || ""; // Handle cases where the cookie value is missing
+          cookies[key] = value;
+        });
+      }
+      if (typeof cookies["auth"] === "string") {
+        jwt.verify(
+          cookies["auth"],
+          process.env.JWT_SECRET as string,
+          (err, decode) => {
+            if (err) {
+              cb(false, EResponseStatusCodes.UNAUTHORIZED_CODE);
+            } else {
+              // Cast to any first to allow setting the user field
+              if (!(info.req as any).user) {
+                (info.req as any).user = {} as TAccountAuth;
+              }
+              // Assign the decode value to info.req.user
+              (info.req as any).user = decode as TAccountAuth;
+              cb(true);
+            }
+          }
+        );
+      }
+    },
+  },
+});
 
 // Tells express to display the static images that are found in this directory
 app.use(
@@ -62,6 +112,7 @@ app.use("/v1/products/base", baseProductRouter);
 app.use("/v1/products/questions", productQuestionsRouter);
 app.use("/v1/products", productRouter);
 
+app.use("/v1/basket", basketRouter);
 app.use("/v1/product-types", productTypeRouter);
 app.use("/v1/brands", brandRouter);
 app.use("/v1/images", imageRouter);
