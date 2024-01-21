@@ -24,7 +24,7 @@ require("express-ws")(basketRouter);
  * @param customerId The id of the customer for the connection
  * @returns True if the message is sent, false otherwise
  */
-const sendBasketContentsToAllCustomerClients = (
+export const sendBasketContentsToAllCustomerClients = (
   customerId: number
 ): Promise<boolean> => {
   return new Promise((resolve, reject) => {
