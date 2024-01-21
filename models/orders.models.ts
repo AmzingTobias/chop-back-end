@@ -239,3 +239,61 @@ export const placeOrder = (
     }
   });
 };
+
+type TOrderStatus = {
+  id: number;
+  status: string;
+};
+
+/**
+ * Get all the possible statuses an order can be
+ * @returns A list of all possible statuses an order can be
+ */
+export const getPossibleOrderStatuses = (): Promise<TOrderStatus[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query("SELECT id, status FROM order_statuses", (err, res) => {
+      if (err) {
+        console.error(err);
+        reject(err);
+      } else {
+        resolve(res.rows);
+      }
+    });
+  });
+};
+
+/**
+ * Update an order's status
+ * @param orderId The id of the order
+ * @param orderStatusId The id of the new status
+ * @returns EDatabaseResponses.OK if the order is updated,
+ * EDatabaseResponses.DOES_NOT_EXIST if no order exists to update,
+ * EDatabaseResponses.FOREIGN_KEY_VIOLATION if the status id is invalid
+ */
+export const updateOrderStatus = (
+  orderId: number,
+  orderStatusId: number
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "UPDATE FROM orders SET status_id = $1 WHERE id = $2",
+      [orderId, orderStatusId],
+      (err: ICustomError, res) => {
+        if (err) {
+          if (err.code === FOREIGN_KEY_VIOLATION) {
+            resolve(EDatabaseResponses.FOREIGN_KEY_VIOLATION);
+          } else {
+            console.error(err);
+            reject(err);
+          }
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};
