@@ -116,3 +116,126 @@ export const getProductsInOrder = (
     );
   });
 };
+
+export enum EOrderPlaceStatus {
+  // The order was placed
+  OK,
+  // Basket contained products not currently available, or the basket was empty
+  BASKET_INVALID,
+  // Shipping address id does not belong to customer
+  SHIPPING_ADDRESS_INVALID,
+}
+
+/**
+ * Place a customer's order, using the contents of their basket
+ * @param customerId The id of the customer
+ * @param shippingAddressId The id for the shipping address
+ * @returns EOrderPlaceStatus
+ */
+export const placeOrder = (
+  customerId: number,
+  shippingAddressId: number
+): Promise<EOrderPlaceStatus> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let transactionStatus = EOrderPlaceStatus.OK;
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+
+        // Validate shipping address is customer's
+        const shippingAddressValidate = await client.query(
+          "SELECT id FROM shipping_addresses WHERE customer_id = $1 AND id = $2",
+          [customerId, shippingAddressId]
+        );
+        if (shippingAddressValidate.rowCount > 0) {
+          // Get a list of products in the basket, with a column to say if they're available for order
+          const validateProducts = await client.query(
+            `
+        SELECT 
+          products_in_basket.product_id, 
+          products_in_basket.quantity,
+          (products_in_basket.quantity <= product_view.stock_count and product_view.available) as "available", 
+          product_view.price::money::numeric::float8 AS "pricePerItem" FROM products_in_basket
+        LEFT JOIN product_view ON products_in_basket.product_id = product_view.id
+        WHERE customer_id = $1
+        `,
+            [customerId]
+          );
+          const productsInBasket: {
+            product_id: number;
+            quantity: number;
+            available: boolean;
+            pricePerItem: number;
+          }[] = validateProducts.rows;
+          // Filter to products that are only invalid
+          const productsInvalidInBasket = productsInBasket.filter(
+            (product) => product.available === false
+          );
+          if (
+            productsInvalidInBasket.length > 0 ||
+            productsInBasket.length <= 0
+          ) {
+            // Remove invalid products from customer's basket
+            await Promise.all(
+              productsInvalidInBasket.map(async (product) => {
+                await client.query(
+                  "DELETE FROM products_in_basket WHERE product_id = $1",
+                  [product.product_id]
+                );
+              })
+            );
+            transactionStatus = EOrderPlaceStatus.BASKET_INVALID;
+          } else {
+            // Create the initial order
+            const baseOrderCreatedResponse = await client.query(
+              "INSERT INTO orders(customer_id, shipping_address_id) VALUES ($1, $2) RETURNING id",
+              [customerId, shippingAddressId]
+            );
+            // Insert each product into the order
+            await Promise.all(
+              productsInBasket.map(async (product) => {
+                await client.query(
+                  "INSERT INTO product_orders(order_id, product_id, quantity, item_price_at_purchase) VALUES ($1, $2, $3, $4)",
+                  [
+                    baseOrderCreatedResponse.rows[0].id,
+                    product.product_id,
+                    product.quantity,
+                    product.pricePerItem,
+                  ]
+                );
+              })
+            );
+            // Update stock count for all products that are involved in the order
+            await Promise.all(
+              productsInBasket.map(async (product) => {
+                await client.query(
+                  "UPDATE product_stock_levels SET amount = amount - $1 WHERE product_id = $2",
+                  [product.quantity, product.product_id]
+                );
+              })
+            );
+            // Clear customer's basket
+            await client.query(
+              "DELETE FROM products_in_basket WHERE customer_id = $1",
+              [customerId]
+            );
+          }
+        } else {
+          transactionStatus = EOrderPlaceStatus.SHIPPING_ADDRESS_INVALID;
+        }
+        // Commit transaction
+        await client.query("COMMIT");
+      } catch (err) {
+        await client.query("ROLLBACK");
+        console.error(err);
+      } finally {
+        client.release();
+        resolve(transactionStatus);
+      }
+    } catch (err) {
+      console.error(err);
+      reject(err);
+    }
+  });
+};
