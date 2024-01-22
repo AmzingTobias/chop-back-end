@@ -85,4 +85,7 @@ export enum ETextResponse {
   DEFAULT_ADDRESS_REMOVED = "Default address removed",
   DEFAULT_ADDRESS_NOT_EXIST = "No default address is set",
   ADDRESS_COUNTRY_ID_INVALID = "Country Id is not supported",
+  // Orders
+  BASKET_INVALID_FOR_ORDER = "Basket contains products no longer available",
+  ORDER_CONFIRMED = "Order placed",
 }
