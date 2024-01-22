@@ -10,6 +10,7 @@ import {
   getOrderDetails,
   getOrdersForCustomer,
   getPossibleOrderStatuses,
+  getProductsInOrder,
   placeOrder,
 } from "../../models/orders.models";
 import { sendBasketContentsToAllCustomerClients } from "./basket.routes";
@@ -282,6 +283,66 @@ orderRouter.get("/:orderId", verifyToken, (req, res) => {
   getOrderDetails(customerId, Number(orderId))
     .then((order) => {
       res.json({ order: order });
+    })
+    .catch((_) => {
+      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
+});
+
+/**
+ * @swagger
+ * /orders/{orderId}/products:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get all products found in an order
+ *     parameters:
+ *       - in: params
+ *         name: orderId
+ *         required: true
+ *         description: The id of the order to get the products for
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: A list of products
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *              productId:
+ *                type: number
+ *                description: The id of the product ordered
+ *              quantity:
+ *                type: number
+ *                description: The amount of that product ordered
+ *              price:
+ *                type: number
+ *                description: The item price for each product
+ *       400:
+ *          description: Fields missing in request
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+orderRouter.get("/:orderId/products", verifyToken, (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const customerId = req.user.accountTypeId;
+  const { orderId } = req.params;
+  if (Number.isNaN(Number(orderId))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+
+  getProductsInOrder(Number(orderId), customerId)
+    .then((products) => {
+      res.json(products);
     })
     .catch((_) => {
       res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
