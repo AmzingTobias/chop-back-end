@@ -55,15 +55,15 @@ export const getOrdersForCustomer = (
     SELECT 
       orders.id, 
       order_statuses.status, 
-      COUNT(product_id) AS "product_count", 
-      sum(PRODUCT_ORDERS.item_price_at_purchase * product_orders.quantity) AS "total",
+      COUNT(product_id)::numeric::integer AS "product_count", 
+      sum(PRODUCT_ORDERS.item_price_at_purchase * product_orders.quantity)::money::numeric::float8 AS "total",
       orders.placed_on FROM orders
     LEFT JOIN order_statuses ON orders.status_id = order_statuses.id
     LEFT JOIN product_orders ON orders.id = product_orders.order_id
     JOIN shipping_addresses ON orders.shipping_address_id = shipping_addresses.id
+    WHERE orders.customer_id = $1
     GROUP BY order_statuses.status, orders.id, orders.placed_on
     ORDER BY orders.placed_on DESC
-    WHERE orders.customer_id = $1
     `,
       [customerId],
       (err, res) => {
@@ -100,7 +100,7 @@ export const getProductsInOrder = (
     SELECT
       product_id AS "productId",
       quantity,
-      item_price_at_purchase AS "price"
+      item_price_at_purchase::money::numeric::float8 AS "price"
     FROM orders_with_products_view
     WHERE order_id = $1 AND customer_id = $2
     `,
@@ -292,6 +292,45 @@ export const updateOrderStatus = (
               ? EDatabaseResponses.OK
               : EDatabaseResponses.DOES_NOT_EXIST
           );
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get specific details regarding a single order
+ * @param customerId The id of the customer who placed the order
+ * @param orderId The id of the order to check
+ * @returns An order entry, or null if the order does not exist
+ */
+export const getOrderDetails = (
+  customerId: number,
+  orderId: number
+): Promise<TOrderEntry | null> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+      SELECT 
+        orders.id, 
+        order_statuses.status, 
+        COUNT(product_id)::numeric::integer AS "product_count", 
+        sum(PRODUCT_ORDERS.item_price_at_purchase * product_orders.quantity)::money::numeric::float8 AS "total",
+        orders.placed_on FROM orders
+      LEFT JOIN order_statuses ON orders.status_id = order_statuses.id
+      LEFT JOIN product_orders ON orders.id = product_orders.order_id
+      JOIN shipping_addresses ON orders.shipping_address_id = shipping_addresses.id
+      WHERE orders.customer_id = $1 AND orders.id = $2
+      GROUP BY order_statuses.status, orders.id, orders.placed_on
+      ORDER BY orders.placed_on DESC
+    `,
+      [customerId, orderId],
+      (err, res) => {
+        if (err) {
+          console.error(err);
+          reject(err);
+        } else {
+          resolve(res.rowCount > 0 ? res.rows[0] : null);
         }
       }
     );

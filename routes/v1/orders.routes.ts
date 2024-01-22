@@ -7,6 +7,8 @@ import {
 import {
   EOrderPlaceStatus,
   getLastPurchaseDateForProduct,
+  getOrderDetails,
+  getOrdersForCustomer,
   getPossibleOrderStatuses,
   placeOrder,
 } from "../../models/orders.models";
@@ -148,7 +150,7 @@ orderRouter.post("/checkout", verifyToken, (req, res) => {
  *             type: object
  *             properties:
  *              id:
- *                type: integer
+ *                type: number
  *                description: The id of the status
  *              status:
  *                type: string
@@ -162,6 +164,124 @@ orderRouter.get("/status", (req, res) => {
   getPossibleOrderStatuses()
     .then((allStatuses) => {
       res.json(allStatuses);
+    })
+    .catch((_) => {
+      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
+});
+
+/**
+ * @swagger
+ * /orders/:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get all possible orders that a customer has placed
+ *     responses:
+ *       200:
+ *         description: A list of all orders a customer has placed
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *              id:
+ *                type: number
+ *                description: The id of the order
+ *              status:
+ *                type: string
+ *                description: The name of the status
+ *              product_count:
+ *                type: number
+ *                description: The number of products in the order
+ *              total:
+ *                type: number
+ *                description: The total price of the order
+ *              placed_on:
+ *                type: date
+ *                description: The time and date the order was placed
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+orderRouter.get("/", verifyToken, (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const customerId = req.user.accountTypeId;
+
+  getOrdersForCustomer(customerId)
+    .then((orders) => {
+      res.json(orders);
+    })
+    .catch((_) => {
+      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
+});
+
+/**
+ * @swagger
+ * /orders/{orderId}:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get all possible orders that a customer has placed
+ *     parameters:
+ *       - in: params
+ *         name: orderId
+ *         required: true
+ *         description: The id of the order to get the information for
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: The order that was placed
+ *         schema:
+ *           type: object
+ *           properties:
+ *            order:
+ *             type: object
+ *             properties:
+ *              id:
+ *                type: integer
+ *                description: The id of the order
+ *              status:
+ *                type: string
+ *                description: The name of the status
+ *              product_count:
+ *                type: number
+ *                description: The number of products in the order
+ *              total:
+ *                type: number
+ *                description: The total price of the order
+ *              placed_on:
+ *                type: date
+ *                description: The time and date the order was placed
+ *       400:
+ *          description: Fields missing in request
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+orderRouter.get("/:orderId", verifyToken, (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const customerId = req.user.accountTypeId;
+  const { orderId } = req.params;
+  if (Number.isNaN(Number(orderId))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+
+  getOrderDetails(customerId, Number(orderId))
+    .then((order) => {
+      res.json({ order: order });
     })
     .catch((_) => {
       res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
