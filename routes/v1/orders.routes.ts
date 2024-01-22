@@ -7,6 +7,7 @@ import {
 import {
   EOrderPlaceStatus,
   getLastPurchaseDateForProduct,
+  getPossibleOrderStatuses,
   placeOrder,
 } from "../../models/orders.models";
 import { sendBasketContentsToAllCustomerClients } from "./basket.routes";
@@ -129,5 +130,40 @@ orderRouter.post("/checkout", verifyToken, (req, res) => {
     .catch((err) => {
       console.error(err);
       return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
+});
+
+/**
+ * @swagger
+ * /orders/status:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get all possible order statuses for an order
+ *     responses:
+ *       200:
+ *         description: A list of all statuses an order can be
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *              id:
+ *                type: integer
+ *                description: The id of the status
+ *              status:
+ *                type: string
+ *                description: The name of the status
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+orderRouter.get("/status", (req, res) => {
+  getPossibleOrderStatuses()
+    .then((allStatuses) => {
+      res.json(allStatuses);
+    })
+    .catch((_) => {
+      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
     });
 });
