@@ -88,4 +88,6 @@ export enum ETextResponse {
   // Orders
   BASKET_INVALID_FOR_ORDER = "Basket contains products no longer available",
   ORDER_CONFIRMED = "Order placed",
+  // Discount codes
+  DISCOUNT_CODE_NOT_EXIST = "Discount code does not exist",
 }
