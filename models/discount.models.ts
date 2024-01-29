@@ -4,6 +4,8 @@ import pool, { EDatabaseResponses, ICustomError } from "../data/data";
  * Type used when validating a discount code
  */
 type TDiscountCodeValidation = {
+  // The code that was validated
+  code: string;
   // If the discount code is currently valid
   valid: boolean;
   // The amount the discount code applies to the total order
@@ -24,6 +26,7 @@ export const validateDiscountCode = (
     pool.query(
       `
     SELECT 
+      code,
       (number_of_uses != 0 AND active) as "valid", 
       percent_off AS "percent", 
       stackable 
