@@ -32,6 +32,9 @@ export const sendBasketContentsToAllCustomerClients = (
       .then((basketContents) => {
         const allCustomerSockets = basketWebSockets.get(customerId);
         if (allCustomerSockets !== undefined) {
+          console.log(
+            `Sending basket update to ${allCustomerSockets.size} connections for customer: ${customerId}`
+          );
           allCustomerSockets.forEach((ws) => {
             ws.send(
               JSON.stringify({ type: "basketUpdate", basket: basketContents })

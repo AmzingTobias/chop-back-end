@@ -14,6 +14,11 @@ import {
   placeOrder,
 } from "../../models/orders.models";
 import { sendBasketContentsToAllCustomerClients } from "./basket.routes";
+import { isArrayOfStrings } from "../../common/validation";
+import {
+  TDiscountCodeValidation,
+  validateDiscountCode,
+} from "../../models/discount.models";
 
 export const orderRouter = Router();
 
@@ -86,6 +91,14 @@ orderRouter.get("/last-purchase/:id", verifyToken, async (req, res) => {
  *         description: The id of the shipping address to use for the order
  *         schema:
  *           type: number
+ *       - in: body
+ *         name: discountCodes
+ *         required: true
+ *         description: A list of discount codes to apply to the order
+ *         schema:
+ *           type: Array
+ *           items:
+ *             type: string
  *     responses:
  *       200:
  *         description: Order confirmed
@@ -96,20 +109,59 @@ orderRouter.get("/last-purchase/:id", verifyToken, async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-orderRouter.post("/checkout", verifyToken, (req, res) => {
+orderRouter.post("/checkout", verifyToken, async (req, res) => {
   if (!req.user || req.user.accountType !== EAccountTypes.customer) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
       .send(ETextResponse.UNAUTHORIZED_REQUEST);
   }
-  const { shippingId } = req.body;
-  if (typeof shippingId !== "number") {
+  const { shippingId, discountCodes: discountCodesInput } = req.body;
+
+  // Validate the type that was supplied for discount codes
+  if (typeof shippingId !== "number" || !isArrayOfStrings(discountCodesInput)) {
     return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
   }
+  const discountCodes: string[] = discountCodesInput;
+
+  // Remove duplicates to prevent users from stacking the same discount multiple times
+  const uniqueDiscountCodes: string[] = [...new Set(discountCodes)];
+
+  // Validate discount codes
+  const validatedDiscountCodesWithNull = await Promise.all(
+    uniqueDiscountCodes.map(async (code) => {
+      try {
+        return await validateDiscountCode(code);
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  // Remove null codes
+  const validatedDiscountCodes = validatedDiscountCodesWithNull.filter(
+    (validation) => validation !== null
+  ) as TDiscountCodeValidation[];
+
+  // Check that all codes in the list are allowed to stack
+  const discountListValid =
+    validatedDiscountCodes.length > 1
+      ? validatedDiscountCodes.every((code) => code.stackable === true)
+      : true;
+
+  if (
+    validatedDiscountCodes.length !== discountCodes.length ||
+    !discountListValid
+  ) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.DISCOUNT_CODE_NOT_EXIST);
+  }
+
+  // Now discount codes have been validated, they can be used with place order
   const customerId = req.user.accountTypeId;
-  placeOrder(customerId, shippingId)
+  placeOrder(customerId, shippingId, validatedDiscountCodes)
     .then((status) => {
       sendBasketContentsToAllCustomerClients(customerId);
       switch (status) {

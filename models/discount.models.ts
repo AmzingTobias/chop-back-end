@@ -3,7 +3,9 @@ import pool, { EDatabaseResponses, ICustomError } from "../data/data";
 /**
  * Type used when validating a discount code
  */
-type TDiscountCodeValidation = {
+export type TDiscountCodeValidation = {
+  // The id of the discount code
+  id: number;
   // The code that was validated
   code: string;
   // If the discount code is currently valid
@@ -26,6 +28,7 @@ export const validateDiscountCode = (
     pool.query(
       `
     SELECT 
+      id,
       code,
       (number_of_uses != 0 AND active) as "valid", 
       percent_off AS "percent", 

@@ -1,5 +1,6 @@
 import { FOREIGN_KEY_VIOLATION } from "../common/postgresql-error-codes";
 import pool, { EDatabaseResponses, ICustomError } from "../data/data";
+import { TDiscountCodeValidation } from "./discount.models";
 
 /**
  * Find the last date that a customer purchased a product
@@ -124,17 +125,21 @@ export enum EOrderPlaceStatus {
   BASKET_INVALID,
   // Shipping address id does not belong to customer
   SHIPPING_ADDRESS_INVALID,
+  // An unexpected error occured
+  UNKNOWN_ERROR,
 }
 
 /**
  * Place a customer's order, using the contents of their basket
  * @param customerId The id of the customer
  * @param shippingAddressId The id for the shipping address
+ * @param discountCodes A list of discount codes to apply, should have been validated for use already
  * @returns EOrderPlaceStatus
  */
 export const placeOrder = (
   customerId: number,
-  shippingAddressId: number
+  shippingAddressId: number,
+  discountCodes: TDiscountCodeValidation[]
 ): Promise<EOrderPlaceStatus> => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -187,11 +192,45 @@ export const placeOrder = (
             );
             transactionStatus = EOrderPlaceStatus.BASKET_INVALID;
           } else {
+            // Calculate the discounted order total
+            const totalOrderPrice = productsInBasket.reduce(
+              (prevPrice, currentItem) =>
+                prevPrice + currentItem.pricePerItem * currentItem.quantity,
+              0
+            );
+
+            const discountedOrderTotal = discountCodes.reduce(
+              (prev, current) =>
+                prev - (current.percent / 100) * totalOrderPrice,
+              totalOrderPrice
+            );
+
             // Create the initial order
             const baseOrderCreatedResponse = await client.query(
-              "INSERT INTO orders(customer_id, shipping_address_id) VALUES ($1, $2) RETURNING id",
-              [customerId, shippingAddressId]
+              "INSERT INTO orders(customer_id, shipping_address_id, price_paid) VALUES ($1, $2, $3) RETURNING id",
+              [customerId, shippingAddressId, discountedOrderTotal]
             );
+
+            // Update the discount code amount, since they've been used
+            await Promise.all(
+              discountCodes.map(async (code) => {
+                await client.query(
+                  "UPDATE discount_codes SET number_of_uses = number_of_uses -1 WHERE number_of_uses > 0 AND code = $1",
+                  [code.code]
+                );
+              })
+            );
+
+            // Insert the discount code linkage to the order
+            await Promise.all(
+              discountCodes.map(async (code) => {
+                await client.query(
+                  "INSERT INTO discount_codes_for_order(order_id, discount_code_id) VALUES ($1, $2)",
+                  [baseOrderCreatedResponse.rows[0].id, code.id]
+                );
+              })
+            );
+
             // Insert each product into the order
             await Promise.all(
               productsInBasket.map(async (product) => {
@@ -228,6 +267,7 @@ export const placeOrder = (
         await client.query("COMMIT");
       } catch (err) {
         await client.query("ROLLBACK");
+        transactionStatus = EOrderPlaceStatus.UNKNOWN_ERROR;
         console.error(err);
       } finally {
         client.release();
