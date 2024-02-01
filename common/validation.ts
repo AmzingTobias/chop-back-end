@@ -6,3 +6,12 @@ export const isArrayOfNumbers = (possibleArrayOfNumbers: any): boolean => {
     )
   );
 };
+
+export const isArrayOfStrings = (possibleArrayOfStrings: any): boolean => {
+  return (
+    Array.isArray(possibleArrayOfStrings) &&
+    possibleArrayOfStrings.every(
+      (possibleString) => typeof possibleString === "string"
+    )
+  );
+};

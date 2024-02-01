@@ -24,7 +24,7 @@ require("express-ws")(basketRouter);
  * @param customerId The id of the customer for the connection
  * @returns True if the message is sent, false otherwise
  */
-const sendBasketContentsToAllCustomerClients = (
+export const sendBasketContentsToAllCustomerClients = (
   customerId: number
 ): Promise<boolean> => {
   return new Promise((resolve, reject) => {
@@ -32,6 +32,9 @@ const sendBasketContentsToAllCustomerClients = (
       .then((basketContents) => {
         const allCustomerSockets = basketWebSockets.get(customerId);
         if (allCustomerSockets !== undefined) {
+          console.log(
+            `Sending basket update to ${allCustomerSockets.size} connections for customer: ${customerId}`
+          );
           allCustomerSockets.forEach((ws) => {
             ws.send(
               JSON.stringify({ type: "basketUpdate", basket: basketContents })
