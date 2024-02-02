@@ -23,11 +23,11 @@ export const addressBookRouter = Router();
  * /auth/address/:
  *   get:
  *     tags: [Address]
- *     summary: Get all countries available for shipping
- *     description: Get all countries that can be shipped to
+ *     summary: Get all addresses for a customer
+ *     description: Get all addresses for a customer
  *     responses:
  *       200:
- *          description: A list of all countries that can be shipped to
+ *          description: A list of all addresses for a customer
  *          schema:
  *            type: array
  *            items:

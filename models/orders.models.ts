@@ -35,11 +35,20 @@ export const getLastPurchaseDateForProduct = (
 };
 
 type TOrderEntry = {
+  // The id of the order
   id: number;
+  // The current status for the order
   status: string;
+  // The number of products featured in the order
   product_count: number;
+  // The total cost of the order
   total: number;
+  // The amount that was paid for the order (includes discounts)
+  pricePaid: number;
+  // The date the order was placed
   placed_on: Date;
+  // The id of the address this order was sent to
+  shippingAddressId: number;
 };
 
 /**
@@ -56,9 +65,12 @@ export const getOrdersForCustomer = (
     SELECT 
       orders.id, 
       order_statuses.status, 
+      orders.shipping_address_id AS "shippingAddressId",
       COUNT(product_id)::numeric::integer AS "product_count", 
       sum(PRODUCT_ORDERS.item_price_at_purchase * product_orders.quantity)::money::numeric::float8 AS "total",
-      orders.placed_on FROM orders
+      orders.price_paid::money::numeric::float8 AS "pricePaid",
+      orders.placed_on 
+    FROM orders
     LEFT JOIN order_statuses ON orders.status_id = order_statuses.id
     LEFT JOIN product_orders ON orders.id = product_orders.order_id
     JOIN shipping_addresses ON orders.shipping_address_id = shipping_addresses.id
@@ -81,6 +93,7 @@ export const getOrdersForCustomer = (
 
 type TProductInOrder = {
   productId: number;
+  productName: string;
   quantity: number;
   price: number;
 };
@@ -100,9 +113,11 @@ export const getProductsInOrder = (
       `
     SELECT
       product_id AS "productId",
+      product_view.name AS "productName",
       quantity,
       item_price_at_purchase::money::numeric::float8 AS "price"
     FROM orders_with_products_view
+    LEFT JOIN product_view ON product_view.id = orders_with_products_view.product_id
     WHERE order_id = $1 AND customer_id = $2
     `,
       [orderId, customerId],
@@ -356,7 +371,9 @@ export const getOrderDetails = (
         order_statuses.status, 
         COUNT(product_id)::numeric::integer AS "product_count", 
         sum(PRODUCT_ORDERS.item_price_at_purchase * product_orders.quantity)::money::numeric::float8 AS "total",
-        orders.placed_on FROM orders
+        orders.price_paid::money::numeric::float8 AS "pricePaid",
+        orders.placed_on
+      FROM orders
       LEFT JOIN order_statuses ON orders.status_id = order_statuses.id
       LEFT JOIN product_orders ON orders.id = product_orders.order_id
       JOIN shipping_addresses ON orders.shipping_address_id = shipping_addresses.id
@@ -371,6 +388,38 @@ export const getOrderDetails = (
           reject(err);
         } else {
           resolve(res.rowCount > 0 ? res.rows[0] : null);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get the discount codes used for an order
+ * @param orderId The id of the order to get the codes for
+ * @param customerId The id of the customer the order belongs to
+ * @returns A list of codes that were used for the order
+ */
+export const getDiscountsUsedForOrder = (
+  orderId: number,
+  customerId: number
+): Promise<{ code: string }[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT
+      code
+    FROM discount_codes_for_order
+    LEFT JOIN discount_codes ON discount_codes_for_order.discount_code_id = discount_codes.id
+    LEFT JOIN orders ON discount_codes_for_order.order_id = orders.id
+    WHERE order_id = $1 AND customer_id = $2
+    `,
+      [orderId, customerId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
         }
       }
     );
