@@ -1,0 +1,2 @@
+export const UNIQUE_CONSTRAINT_FAILED = "23505";
+export const FOREIGN_KEY_VIOLATION = "23503";
