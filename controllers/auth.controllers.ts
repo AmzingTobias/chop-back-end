@@ -22,6 +22,8 @@ export const COOKIE_OPTIONS: CookieOptions = {
   domain: process.env.COOKIE_DOMAIN,
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax",
+  // 400 days
+  maxAge: 34560000,
 };
 
 /**
@@ -113,7 +115,7 @@ export const login_to_account_controller = async (
                         COOKIE_OPTIONS
                       );
                       const sessionId = uuidv4();
-                      res.cookie("sessionId", sessionId, COOKIE_OPTIONS); // Set a max age of one day
+                      res.cookie("sessionId", sessionId, COOKIE_OPTIONS);
                       res.json({ success: true });
                     } else {
                       res
