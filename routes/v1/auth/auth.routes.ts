@@ -33,7 +33,7 @@ export const authRouter = Router();
  *          description: Logout succesful
  */
 authRouter.post("/logout", (_, res) => {
-  res.clearCookie("auth", COOKIE_OPTIONS);
+  res.clearCookie("auth");
   res.send(ETextResponse.LOGOUT_SUCCESFUL);
 });
 
