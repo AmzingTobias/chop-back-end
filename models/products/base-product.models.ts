@@ -262,3 +262,35 @@ export const unassignProductTypesFromBaseProduct = (
     }
   });
 };
+
+type TBaseProduct = {
+  id: number;
+  brandName: string;
+  description: string;
+};
+
+/**
+ * Get all the base products
+ * @returns A list of the base products
+ */
+export const getAllBaseProducts = (): Promise<TBaseProduct[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT 
+    base_products.id, 
+    COALESCE(brands.name, ''::character varying) AS "brandName",
+    description
+    FROM base_products 
+    LEFT JOIN brands on base_products.brand_id = brands.id
+    `,
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};
