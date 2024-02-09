@@ -132,6 +132,9 @@ baseProductRouter.post("/", verifyToken, (req, res) => {
  *                description:
  *                  type: string
  *                  description: Description for the base product
+ *                productCount:
+ *                  type: integer
+ *                  description: The number of products that use this base product
  *       401:
  *          description: Account lacks required permissions
  *       500:

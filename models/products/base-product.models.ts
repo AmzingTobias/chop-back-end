@@ -267,6 +267,7 @@ type TBaseProduct = {
   id: number;
   brandName: string;
   description: string;
+  productCount: number;
 };
 
 /**
@@ -277,12 +278,15 @@ export const getAllBaseProducts = (): Promise<TBaseProduct[]> => {
   return new Promise((resolve, reject) => {
     pool.query(
       `
-    SELECT 
-    base_products.id, 
-    COALESCE(brands.name, ''::character varying) AS "brandName",
-    description
-    FROM base_products 
-    LEFT JOIN brands on base_products.brand_id = brands.id
+    SELECT
+      base_products.id,
+      COALESCE(brands.name, ''::character varying) AS "brandName",
+      base_products.description,
+      COUNT(products.id) AS "productCount"
+    FROM base_products
+    LEFT JOIN brands ON base_products.brand_id = brands.id
+    LEFT JOIN products ON base_products.id = products.base_product_id
+    GROUP BY base_products.id, brands.name, base_products.description;
     `,
       (err, res) => {
         if (err) {
