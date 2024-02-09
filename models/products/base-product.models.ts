@@ -298,3 +298,26 @@ export const getAllBaseProducts = (): Promise<TBaseProduct[]> => {
     );
   });
 };
+
+/**
+ * Get a list of all the product ids who have the base id provided
+ * @param baseId The base id to get all the products with
+ * @returns A list of products who all share the same base id
+ */
+export const getProductIdsWithBaseId = (
+  baseId: number
+): Promise<{ id: number }[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "SELECT id FROM products WHERE base_product_id = $1",
+      [baseId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};

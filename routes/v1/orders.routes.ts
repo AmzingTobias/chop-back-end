@@ -177,7 +177,6 @@ orderRouter.post("/checkout", verifyToken, async (req, res) => {
             .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
             .send(ETextResponse.ADDRESS_ID_NOT_EXIST);
         default:
-          console.log(`Unhandled status: ${status}`);
           return res.sendStatus(
             EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
           );
