@@ -1,7 +1,7 @@
 import { UNIQUE_CONSTRAINT_FAILED } from "../common/postgresql-error-codes";
 import pool, { EDatabaseResponses, ICustomError } from "../data/data";
 
-type TProductTypeEntry = {
+export type TProductTypeEntry = {
   id: number;
   type: string;
 };

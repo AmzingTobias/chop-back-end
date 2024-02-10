@@ -3,6 +3,7 @@ import {
   FOREIGN_KEY_VIOLATION,
   UNIQUE_CONSTRAINT_FAILED,
 } from "../../common/postgresql-error-codes";
+import { TProductTypeEntry } from "../product-types.models";
 
 /**
  * Create a new base product variation
@@ -311,6 +312,36 @@ export const getProductIdsWithBaseId = (
   return new Promise((resolve, reject) => {
     pool.query(
       "SELECT id FROM products WHERE base_product_id = $1",
+      [baseId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get the product types assigned to a base product
+ * @param baseId The base product id
+ * @returns A list of product types assigned to the base product
+ */
+export const getProductTypesWithBaseId = (
+  baseId: number
+): Promise<TProductTypeEntry[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+      SELECT 
+        product_types.id, 
+        product_types.type 
+      FROM product_types 
+      LEFT JOIN assigned_product_type on product_types.id = assigned_product_type.type_id
+      WHERE product_id = $1
+      `,
       [baseId],
       (err, res) => {
         if (err) {

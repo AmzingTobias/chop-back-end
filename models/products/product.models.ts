@@ -193,7 +193,7 @@ export const getProductsByType = (
 ): Promise<IBaseProductEntry[]> => {
   return new Promise((resolve, reject) => {
     const getProductsForTypeQuery = `
-    SELECT
+    SELECT DISTINCT
       id, 
       name, 
       description,

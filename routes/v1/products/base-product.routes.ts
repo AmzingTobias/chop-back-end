@@ -6,6 +6,7 @@ import {
   deleteBaseProduct,
   getAllBaseProducts,
   getProductIdsWithBaseId,
+  getProductTypesWithBaseId,
   unassignProductTypesFromBaseProduct,
   updateBaseProductBrand,
   updateBaseProductDescription,
@@ -492,6 +493,66 @@ baseProductRouter.delete("/:id/brand", verifyToken, async (req, res) => {
         .send(ETextResponse.INTERNAL_ERROR);
     }
   }
+});
+
+/**
+ * @swagger
+ * /products/base/{id}/product-types:
+ *   get:
+ *     tags: [Base Products, Products, Product types]
+ *     summary: Get product types assigned to a base product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the base product
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: A list of product types
+ *         schema:
+ *            type: array
+ *            items:
+ *              type: object
+ *              properties:
+ *               id:
+ *                 type: integer
+ *                 description: The id of the product type.
+ *                 example: 1
+ *               type:
+ *                 type: string
+ *                 description: The name of the product type.
+ *                 example: Technology
+ *       400:
+ *          description: Base product id missing
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+baseProductRouter.get("/:id/product-types", verifyToken, (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  getProductTypesWithBaseId(Number(id))
+    .then((data) => res.json(data))
+    .catch((err) => {
+      console.error(err);
+      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
 });
 
 /**
