@@ -365,7 +365,7 @@ baseProductRouter.delete("/:id", verifyToken, (req, res) => {
  *         schema:
  *           type: integer
  *       - in: body
- *         name: brand-id
+ *         name: brandId
  *         required: true
  *         description: The new brand id for the prduct
  *         schema:
@@ -396,7 +396,7 @@ baseProductRouter.put("/:id/brand", verifyToken, async (req, res) => {
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
-    const { "brand-id": brandId } = req.body;
+    const { brandId } = req.body;
     if (typeof brandId === "number") {
       try {
         const updated = await updateBaseProductBrand(Number(id), brandId);

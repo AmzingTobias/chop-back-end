@@ -286,7 +286,8 @@ export const getAllBaseProducts = (): Promise<TBaseProduct[]> => {
     FROM base_products
     LEFT JOIN brands ON base_products.brand_id = brands.id
     LEFT JOIN products ON base_products.id = products.base_product_id
-    GROUP BY base_products.id, brands.name, base_products.description;
+    GROUP BY base_products.id, brands.name, base_products.description
+    ORDER BY base_products.id ASC
     `,
       (err, res) => {
         if (err) {
