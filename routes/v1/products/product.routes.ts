@@ -7,8 +7,10 @@ import {
   getProductsOfSameStyle,
   getRandomNumberOfProducts,
   setPriceForProduct,
+  updateProductAvailability,
   updateProductDescription,
   updateProductName,
+  updateProductStock,
 } from "../../../models/products/product.models";
 import {
   EResponseStatusCodes,
@@ -881,7 +883,7 @@ productRouter.post("/", verifyToken, async (req, res) => {
 /**
  * @swagger
  * /products/{id}/price:
- *   post:
+ *   put:
  *     tags: [Products]
  *     summary: Set a new price for the product
  *     description: Set a new price for an existing product
@@ -908,7 +910,7 @@ productRouter.post("/", verifyToken, async (req, res) => {
  *       500:
  *          description: Internal server error
  */
-productRouter.post("/:id/price", verifyToken, async (req, res) => {
+productRouter.put("/:id/price", verifyToken, async (req, res) => {
   if (
     !req.user ||
     (req.user.accountType !== EAccountTypes.admin &&
@@ -950,5 +952,159 @@ productRouter.post("/:id/price", verifyToken, async (req, res) => {
     return res
       .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
       .send(ETextResponse.INTERNAL_ERROR);
+  }
+});
+
+/**
+ * @swagger
+ * /products/{id}/stock:
+ *   put:
+ *     tags: [Products]
+ *     summary: Update a product's stock
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product to update
+ *         schema:
+ *           type: integer
+ *       - in: body
+ *         name: stock
+ *         required: true
+ *         description: The new stock count
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *          description: Product's stock updated
+ *       400:
+ *          description: Product does not exist
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.put("/:id/stock", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.warehouse &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  } else {
+    const { stock } = req.body;
+    if (typeof stock === "number") {
+      try {
+        const updated = await updateProductStock(Number(id), stock);
+        switch (updated) {
+          case EDatabaseResponses.OK:
+            res.send(ETextResponse.PRODUCT_UPDATED);
+            break;
+          case EDatabaseResponses.DOES_NOT_EXIST:
+            res
+              .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+              .send(ETextResponse.PRODUCT_ID_NOT_EXISTS);
+            break;
+          default:
+            res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+            break;
+        }
+      } catch (err) {
+        console.error(err);
+        res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+      }
+    } else {
+      res
+        .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+        .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+    }
+  }
+});
+
+/**
+ * @swagger
+ * /products/{id}/available:
+ *   put:
+ *     tags: [Products]
+ *     summary: Update a product's availability
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product to update
+ *         schema:
+ *           type: integer
+ *       - in: body
+ *         name: available
+ *         required: true
+ *         description: The new availability
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *          description: Product's availability updated
+ *       400:
+ *          description: Product does not exist
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productRouter.put("/:id/available", verifyToken, async (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.warehouse &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  } else {
+    const { available } = req.body;
+    if (typeof available === "boolean") {
+      try {
+        const updated = await updateProductAvailability(Number(id), available);
+        switch (updated) {
+          case EDatabaseResponses.OK:
+            res.send(ETextResponse.PRODUCT_UPDATED);
+            break;
+          case EDatabaseResponses.DOES_NOT_EXIST:
+            res
+              .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+              .send(ETextResponse.PRODUCT_ID_NOT_EXISTS);
+            break;
+          default:
+            res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+            break;
+        }
+      } catch (err) {
+        console.error(err);
+        res
+          .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
+          .send(ETextResponse.INTERNAL_ERROR);
+      }
+    } else {
+      res
+        .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+        .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+    }
   }
 });

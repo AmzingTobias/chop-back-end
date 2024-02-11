@@ -415,3 +415,63 @@ export const getProductsOfSameStyle = (
     );
   });
 };
+
+/**
+ * Update a product's stock levels
+ * @param productId The id of the product to update the stock count
+ * @param stockCount The new stock count for the product
+ * @returns EDatabaseResponses.OK if the stock count is updated.
+ * EDatabaseResponses.DOES_NOT_EXIST if the product does not exist to update the stock for
+ */
+export const updateProductStock = (
+  productId: number,
+  stockCount: number
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `UPDATE product_stock_levels SET amount = $1 WHERE product_id = $2`,
+      [stockCount, productId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Update a product's availability
+ * @param productId The id of the product to update
+ * @param available The availability of the product
+ * @returns EDatabaseResponses.OK if the availability is updated.
+ * EDatabaseResponses.DOES_NOT_EXIST if the product does not exist to update the availability for
+ */
+export const updateProductAvailability = (
+  productId: number,
+  available: boolean
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `UPDATE products SET available = $1 WHERE id = $2`,
+      [available, productId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};
