@@ -95,30 +95,38 @@ export const createNewProductVariant = (
   baseProductId: number,
   productName: string,
   price: number,
-  description?: string
-): Promise<EDatabaseResponses> => {
+  description?: string,
+  available: boolean = false,
+  stockCount: number = 0
+): Promise<{ status: EDatabaseResponses; createdId: number | undefined }> => {
   return new Promise(async (resolve, reject) => {
     try {
       const client = await pool.connect();
       let transactionStatus: EDatabaseResponses | undefined = undefined;
+      let productIdCreated: number | undefined = undefined;
       try {
         await client.query("BEGIN");
         const createProductQuery =
-          "INSERT INTO products(name, base_product_id, description) VALUES ($1, $2, $3) RETURNING id";
+          "INSERT INTO products(name, available, base_product_id, description) VALUES ($1, $2, $3, $4) RETURNING id";
         const res = await client.query(createProductQuery, [
           productName,
+          available,
           baseProductId,
           description,
         ]);
         const createProductStockLevelQuery =
-          "INSERT INTO product_stock_levels(product_id) VALUES($1)";
-        await client.query(createProductStockLevelQuery, [res.rows[0].id]);
+          "INSERT INTO product_stock_levels(product_id, amount) VALUES($1, $2)";
+        await client.query(createProductStockLevelQuery, [
+          res.rows[0].id,
+          stockCount,
+        ]);
         const createProductPriceQuery =
           "INSERT INTO product_prices(product_id, price) VALUES($1, $2)";
         await client.query(createProductPriceQuery, [
           res.rows[0].id,
           price.toFixed(2),
         ]);
+        productIdCreated = res.rows[0].id;
         await client.query("COMMIT");
         transactionStatus = EDatabaseResponses.OK;
       } catch (err) {
@@ -135,7 +143,7 @@ export const createNewProductVariant = (
         if (transactionStatus === undefined) {
           reject();
         } else {
-          resolve(transactionStatus);
+          resolve({ status: transactionStatus, createdId: productIdCreated });
         }
       }
     } catch (err) {

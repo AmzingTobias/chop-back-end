@@ -781,6 +781,18 @@ productRouter.delete("/:id/description", verifyToken, async (req, res) => {
  *         description: The list of categories this product falls under
  *         schema:
  *           type: string
+ *       - in: body
+ *         name: available
+ *         required: true
+ *         description: If the product is available for purchase
+ *         schema:
+ *           type: boolean
+ *       - in: body
+ *         name: stockCount
+ *         required: false
+ *         description: The number of stock available for the product
+ *         schema:
+ *           type: number
  *     responses:
  *       201:
  *          description: Product was created
@@ -808,11 +820,20 @@ productRouter.post("/", verifyToken, async (req, res) => {
     }
   }
 
-  const { name, price, "base-id": baseProductId, description } = req.body;
+  const {
+    name,
+    price,
+    "base-id": baseProductId,
+    description,
+    available,
+    stockCount,
+  } = req.body;
   if (
     typeof name === "string" &&
     typeof price === "number" &&
     typeof baseProductId === "number" &&
+    (typeof available === "boolean" || typeof available === "undefined") &&
+    (typeof stockCount === "number" || typeof stockCount === "undefined") &&
     (typeof description === "string" ||
       description === undefined ||
       description === null)
@@ -822,13 +843,15 @@ productRouter.post("/", verifyToken, async (req, res) => {
         baseProductId,
         name,
         price,
-        description
+        description,
+        available,
+        stockCount
       );
-      switch (created) {
+      switch (created.status) {
         case EDatabaseResponses.OK:
           res
             .status(EResponseStatusCodes.CREATED_CODE)
-            .send(ETextResponse.PRODUCT_CREATED);
+            .json({ productId: created.createdId });
           break;
         case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
           res
