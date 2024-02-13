@@ -39,6 +39,10 @@ export const brandRouter = Router();
  *                 type: string
  *                 description: The name of the brand.
  *                 example: AMD
+ *               productCount:
+ *                 type: number
+ *                 description: The number of base products associated with the brand
+ *                 example: 1
  *       500:
  *          description: Internal server error
  */

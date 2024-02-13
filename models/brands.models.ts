@@ -4,6 +4,7 @@ import pool, { EDatabaseResponses, ICustomError } from "../data/data";
 type TBrandEntry = {
   id: number;
   name: string;
+  productCount: number;
 };
 
 /**
@@ -12,14 +13,22 @@ type TBrandEntry = {
  */
 export const getAllBrands = (): Promise<TBrandEntry[]> => {
   return new Promise((resolve, reject) => {
-    pool.query("SELECT id, name FROM brands", (err: ICustomError, res) => {
-      if (err) {
-        console.error(`${err.code}: ${err.message}`);
-        reject(err);
-      } else {
-        resolve(res.rows as TBrandEntry[]);
+    pool.query(
+      `
+    SELECT brands.id, brands.name, COUNT(base_products.id) AS "productCount"
+    FROM brands
+      LEFT JOIN public.base_products on brands.id = base_products.brand_id
+    GROUP BY brands.id
+    `,
+      (err: ICustomError, res) => {
+        if (err) {
+          console.error(`${err.code}: ${err.message}`);
+          reject(err);
+        } else {
+          resolve(res.rows as TBrandEntry[]);
+        }
       }
-    });
+    );
   });
 };
 
