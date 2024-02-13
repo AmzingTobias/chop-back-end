@@ -13,6 +13,7 @@ import {
 import { EDatabaseResponses } from "../../data/data";
 import { EAccountTypes, verifyToken } from "../../security/security";
 import { getProductsByBrand } from "../../models/products/product.models";
+import { getBaseProductsWithBrand } from "../../models/products/base-product.models";
 
 export const brandRouter = Router();
 
@@ -376,5 +377,61 @@ brandRouter.get("/:id/products", async (req, res) => {
         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
         .send(ETextResponse.INTERNAL_ERROR);
     }
+  }
+});
+
+/**
+ * @swagger
+ * /brands/{id}/base-products:
+ *   get:
+ *     tags: [Base Products, Brands]
+ *     summary: Get all base products assinged to a brand
+ *     responses:
+ *       200:
+ *          description: List of base products
+ *          schema:
+ *            type: array
+ *            items:
+ *              type: object
+ *              properties:
+ *                id:
+ *                  type: integer
+ *                  description: The id of the base product
+ *                brandName:
+ *                  type: string
+ *                  description: The brand name of the base product if it exists
+ *                description:
+ *                  type: string
+ *                  description: Description for the base product
+ *                productCount:
+ *                  type: integer
+ *                  description: The number of products that use this base product
+ *       400:
+ *          description: Id invalid in request
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+brandRouter.get("/:id/base-products", verifyToken, (req, res) => {
+  if (
+    !req.user ||
+    req.user.accountTypeId !== EAccountTypes.sales ||
+    req.user.accountType !== EAccountTypes.admin
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+  } else {
+    getBaseProductsWithBrand(Number(id))
+      .then((baseProducts) => res.json(baseProducts))
+      .catch((err) => {
+        console.error(err);
+        res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
   }
 });
