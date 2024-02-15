@@ -352,7 +352,8 @@ export const getProductsByName = (
       "brandId",
       stock_count, 
       price::money::numeric::float8,
-      description
+      description,
+      base_product_id AS "baseProductId"
     FROM product_view
     WHERE to_tsvector(name) @@ websearch_to_tsquery($1) ORDER BY ts_rank(to_tsvector(name),  websearch_to_tsquery($1)) desc
     `,
