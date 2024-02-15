@@ -388,3 +388,39 @@ export const getBaseProductsWithBrand = (
     );
   });
 };
+
+/**
+ * Get the base products assigned to a product type
+ * @param productTypeId The id of the product type
+ * @returns A list of base products
+ */
+export const getBaseProductsWithProductType = (
+  productTypeId: number
+): Promise<TBaseProduct[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT
+      base_products.id,
+      COALESCE(brands.name, ''::character varying) AS "brandName",
+      base_products.description,
+      COUNT(products.id) AS "productCount"
+    FROM base_products
+    LEFT JOIN brands ON base_products.brand_id = brands.id
+    LEFT JOIN assigned_product_type ON base_products.id = assigned_product_type.product_id
+    LEFT JOIN products ON base_products.id = products.base_product_id
+    WHERE assigned_product_type.type_id = $1
+    GROUP BY base_products.id, brands.name, base_products.description
+    ORDER BY base_products.id ASC
+  `,
+      [productTypeId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};

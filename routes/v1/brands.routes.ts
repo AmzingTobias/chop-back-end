@@ -386,6 +386,13 @@ brandRouter.get("/:id/products", async (req, res) => {
  *   get:
  *     tags: [Base Products, Brands]
  *     summary: Get all base products assinged to a brand
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the brand
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
  *          description: List of base products

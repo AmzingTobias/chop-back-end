@@ -13,6 +13,7 @@ import {
 } from "../../common/response-types";
 import { EAccountTypes, verifyToken } from "../../security/security";
 import { getProductsByType } from "../../models/products/product.models";
+import { getBaseProductsWithProductType } from "../../models/products/base-product.models";
 
 export const productTypeRouter = Router();
 
@@ -118,6 +119,69 @@ productTypeRouter.post("/", verifyToken, async (req, res) => {
     res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.MISSING_FIELD_IN_REQ_BODY);
+  }
+});
+
+/**
+ * @swagger
+ * /product-types/{id}/base-products:
+ *   get:
+ *     tags: [Base Products, Product types]
+ *     summary: Get all base products assinged to a product type
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the product type
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *          description: List of base products
+ *          schema:
+ *            type: array
+ *            items:
+ *              type: object
+ *              properties:
+ *                id:
+ *                  type: integer
+ *                  description: The id of the base product
+ *                brandName:
+ *                  type: string
+ *                  description: The brand name of the base product if it exists
+ *                description:
+ *                  type: string
+ *                  description: Description for the base product
+ *                productCount:
+ *                  type: integer
+ *                  description: The number of products that use this base product
+ *       400:
+ *          description: Id invalid in request
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+productTypeRouter.get("/:id/base-products", verifyToken, (req, res) => {
+  if (
+    !req.user ||
+    req.user.accountTypeId !== EAccountTypes.sales ||
+    req.user.accountType !== EAccountTypes.admin
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+  } else {
+    getBaseProductsWithProductType(Number(id))
+      .then((baseProducts) => res.json(baseProducts))
+      .catch((err) => {
+        console.error(err);
+        res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
   }
 });
 
