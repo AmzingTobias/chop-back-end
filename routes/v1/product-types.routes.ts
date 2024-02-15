@@ -39,6 +39,10 @@ export const productTypeRouter = Router();
  *                 type: string
  *                 description: The name of the product type.
  *                 example: Technology
+ *               productCount:
+ *                 type: number
+ *                 description: The number of products assigned to the type.
+ *                 example: 1
  *       500:
  *          description: Internal server error
  */
