@@ -5,6 +5,7 @@ import {
   ETextResponse,
 } from "../../common/response-types";
 import {
+  createNewDiscountCode,
   getAllDiscountCodes,
   toggleDiscountCodeActive,
   toggleDiscountCodeStackable,
@@ -12,6 +13,7 @@ import {
   updateDiscountCodeRemainingUses,
   validateDiscountCode,
 } from "../../models/discount.models";
+import { EDatabaseResponses } from "../../data/data";
 
 export const discountRouter = Router();
 
@@ -131,6 +133,98 @@ discountRouter.get("/code", verifyToken, (req, res) => {
     .catch((err) => {
       console.error(err);
       res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
+});
+
+/**
+ * @swagger
+ * /discounts/code:
+ *   get:
+ *     tags: [Discounts]
+ *     summary: Validate a discount code
+ *     parameters:
+ *       - in: body
+ *         name: code
+ *         required: true
+ *         description: The code
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: percent
+ *         required: true
+ *         description: The new percentage value for the code
+ *         schema:
+ *           type: integer
+ *       - in: body
+ *         name: active
+ *         required: true
+ *         description: If the code is active
+ *         schema:
+ *           type: boolean
+ *       - in: body
+ *         name: stackable
+ *         required: true
+ *         description: If the code can be used in conjunction with other codes
+ *         schema:
+ *           type: boolean
+ *       - in: body
+ *         name: uses
+ *         required: true
+ *         description: The new number of uses for the code
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       201:
+ *         description: Discount code created
+ *       400:
+ *          description: Request missing code or code invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       409:
+ *          description: The same code already exists
+ *       500:
+ *          description: Internal server error
+ */
+discountRouter.post("/code", verifyToken, (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+  }
+
+  const { code, percent, uses, active, stackable } = req.body;
+
+  if (
+    typeof code !== "string" ||
+    typeof percent !== "number" ||
+    typeof uses !== "number" ||
+    typeof active !== "boolean" ||
+    typeof stackable !== "boolean" ||
+    percent > 100 ||
+    percent < 0 ||
+    uses < -1
+  ) {
+    return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+  }
+
+  createNewDiscountCode(code, percent, uses, active, stackable)
+    .then((databaseResponse) => {
+      switch (databaseResponse) {
+        case EDatabaseResponses.OK:
+          return res.sendStatus(EResponseStatusCodes.CREATED_CODE);
+        case EDatabaseResponses.CONFLICT:
+          return res.sendStatus(EResponseStatusCodes.CONFLICT_CODE);
+        default:
+          return res.sendStatus(
+            EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+          );
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
     });
 });
 

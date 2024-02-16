@@ -1,3 +1,4 @@
+import { UNIQUE_CONSTRAINT_FAILED } from "../common/postgresql-error-codes";
 import pool, { EDatabaseResponses, ICustomError } from "../data/data";
 
 /**
@@ -209,6 +210,42 @@ export const updateDiscountCodeRemainingUses = (
               ? EDatabaseResponses.OK
               : EDatabaseResponses.DOES_NOT_EXIST
           );
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Insert a new discount code
+ * @param code The code
+ * @param percent The percentage value for the code
+ * @param uses The number of uses available for the code
+ * @param active If the code is active
+ * @param stackable If the code works in conjunction with other codes
+ * @returns EDatabaseResponses.CONFLICT the code is already in use,
+ * EDatabaseResponses.OK the code was created
+ */
+export const createNewDiscountCode = (
+  code: string,
+  percent: number,
+  uses: number,
+  active: boolean,
+  stackable: boolean
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "INSERT INTO discount_codes(code, number_of_uses, active, stackable, percent_off) VALUES ($1, $2, $3, $4, $5)",
+      [code, uses, active, stackable, percent],
+      (err: ICustomError, res) => {
+        if (err) {
+          if (err.code === UNIQUE_CONSTRAINT_FAILED) {
+            resolve(EDatabaseResponses.CONFLICT);
+          } else {
+            reject(err);
+          }
+        } else {
+          resolve(EDatabaseResponses.OK);
         }
       }
     );
