@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   EAccountTypeTables,
+  getAllAccounts,
   get_account_details,
   update_account_password,
 } from "../../../models/auth/auth.models";
@@ -35,6 +36,47 @@ export const authRouter = Router();
 authRouter.post("/logout", (_, res) => {
   res.clearCookie("auth");
   res.send(ETextResponse.LOGOUT_SUCCESFUL);
+});
+
+/**
+ * @swagger
+ * /auth/accounts:
+ *   get:
+ *     tags: [Accounts]
+ *     summary: Get all accounts on the site
+ *     responses:
+ *       200:
+ *          description: List of accounts
+ *          schema:
+ *            type: array
+ *            items:
+ *              type: object
+ *              properties:
+ *                id:
+ *                  type: integer
+ *                  description: The id of the account
+ *                email:
+ *                  type: string
+ *                  description: The email attached to the account
+ *                type:
+ *                  type: string
+ *                  description: Number representing the type the account belongs to
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+authRouter.get("/accounts", verifyToken, (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.admin) {
+    res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+  }
+
+  getAllAccounts()
+    .then((allAccounts) => res.json(allAccounts))
+    .catch((err) => {
+      console.error(err);
+      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
 });
 
 /**

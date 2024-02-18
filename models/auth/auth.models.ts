@@ -194,3 +194,51 @@ export const get_account_details = (
     );
   });
 };
+
+type TAccountDetailsEntry = {
+  id: number;
+  email: string;
+  type: number | null;
+};
+
+/**
+ * Get all accounts that exist
+ * @returns A list of account entries matched to their type
+ */
+export const getAllAccounts = (): Promise<TAccountDetailsEntry[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+      SELECT
+      accounts.id,
+      email,
+      CASE
+          WHEN customer_accounts.account_id IS NOT NULL THEN 0
+          WHEN sale_accounts.account_id IS NOT NULL THEN 1
+          WHEN support_accounts.account_id IS NOT NULL THEN 2
+          WHEN admin_accounts.account_id IS NOT NULL THEN 3
+          WHEN warehouse_accounts.account_id IS NOT NULL THEN 4
+      END AS type
+      FROM
+          accounts
+      LEFT JOIN
+          admin_accounts ON accounts.id = admin_accounts.account_id
+      LEFT JOIN
+          customer_accounts ON accounts.id = customer_accounts.account_id
+      LEFT JOIN
+          support_accounts ON accounts.id = support_accounts.account_id
+      LEFT JOIN
+          warehouse_accounts ON accounts.id = warehouse_accounts.account_id
+      LEFT JOIN
+          sale_accounts ON accounts.id = sale_accounts.account_id
+      `,
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};
