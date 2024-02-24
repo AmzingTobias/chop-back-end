@@ -116,3 +116,46 @@ export const getPurchasesPerProductType = (
     );
   });
 };
+
+type TPurchasePerBrand = {
+  brand: string;
+  purchaseCount: number;
+};
+
+/**
+ * Get the purchases made in a given date period by brand
+ * @param startDate The start date for the range
+ * @param endDate The end date for the range
+ * @returns A list of TPurchasePerBrand
+ */
+export const getPurchasesPerBrand = (
+  startDate: Date,
+  endDate: Date
+): Promise<TPurchasePerBrand[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+      SELECT
+        brands.name AS "brand",
+        SUM(product_orders.quantity) AS "purchaseCount"
+      FROM brands
+      LEFT JOIN base_products ON brands.id = base_products.brand_id
+      LEFT JOIN products ON base_products.id = products.base_product_id
+      LEFT JOIN product_orders ON products.id = product_orders.product_id
+      LEFT JOIN orders ON product_orders.order_id = orders.id
+      WHERE orders.placed_on::date BETWEEN $1 AND $2
+      GROUP BY brands.name
+      HAVING SUM(product_orders.quantity) > 0
+      ORDER BY "purchaseCount" DESC
+      `,
+      [startDate, endDate],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};
