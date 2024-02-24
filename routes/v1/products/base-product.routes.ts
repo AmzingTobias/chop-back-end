@@ -208,7 +208,7 @@ baseProductRouter.get("/:id", verifyToken, (req, res) => {
   }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
-    res
+    return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   }
@@ -262,7 +262,7 @@ baseProductRouter.put("/:id", verifyToken, (req, res) => {
   const { id } = req.params;
   const { description } = req.body;
   if (Number.isNaN(Number(id)) || typeof description !== "string") {
-    res
+    return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   }
@@ -324,7 +324,7 @@ baseProductRouter.delete("/:id", verifyToken, (req, res) => {
   }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
-    res
+    return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
@@ -393,7 +393,7 @@ baseProductRouter.put("/:id/brand", verifyToken, async (req, res) => {
   }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
-    res
+    return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
@@ -468,7 +468,7 @@ baseProductRouter.delete("/:id/brand", verifyToken, async (req, res) => {
   }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
-    res
+    return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
@@ -476,19 +476,18 @@ baseProductRouter.delete("/:id/brand", verifyToken, async (req, res) => {
       const deleted = await updateBaseProductBrand(Number(id));
       switch (deleted) {
         case EDatabaseResponses.OK:
-          res.send(ETextResponse.BRAND_DELETED);
-          break;
+          return res.send(ETextResponse.BRAND_DELETED);
         case EDatabaseResponses.DOES_NOT_EXIST:
-          res
+          return res
             .status(EResponseStatusCodes.BAD_REQUEST_CODE)
             .send(ETextResponse.BASE_PRODUCT_ID_NOT_EXIST);
-          break;
         default:
-          res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
-          break;
+          return res.sendStatus(
+            EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+          );
       }
     } catch (_) {
-      res
+      return res
         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
         .send(ETextResponse.INTERNAL_ERROR);
     }
@@ -551,7 +550,7 @@ baseProductRouter.get("/:id/product-types", verifyToken, (req, res) => {
     .then((data) => res.json(data))
     .catch((err) => {
       console.error(err);
-      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
     });
 });
 
