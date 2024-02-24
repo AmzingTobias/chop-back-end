@@ -6,6 +6,7 @@ import {
 } from "../../common/response-types";
 import {
   getPurchaseAmountPerDate,
+  getPurchasesPerProductType,
   getViewHistoryAnalytics,
 } from "../../models/analytics.models";
 import { start } from "repl";
@@ -67,22 +68,22 @@ analyticsRouter.get("/purchases", verifyToken, (req, res) => {
  *   get:
  *     tags: [Analytics]
  *     summary: Get a list of product's view history between two dates
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: false
+ *         description: The first date for the range
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: endDate
+ *         required: false
+ *         description: The end date for the range
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: A list of product's view history
- *         parameters:
- *           - in: query
- *             name: startDate
- *             required: false
- *             description: The first date for the range
- *             schema:
- *               type: string
- *           - in: query
- *             name: endDate
- *             required: false
- *             description: The end date for the range
- *             schema:
- *               type: string
  *         schema:
  *           type: array
  *           items:
@@ -118,6 +119,67 @@ analyticsRouter.get("/product-view-history", verifyToken, (req, res) => {
       ? new Date(endDateStr)
       : new Date();
   getViewHistoryAnalytics(startDate, endDate)
+    .then((data) => res.json(data))
+    .catch((err) => {
+      console.error(err);
+      return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
+});
+
+/**
+ * @swagger
+ * /analytics/product-type:
+ *   get:
+ *     tags: [Analytics]
+ *     summary: Get a list of the purchases made in a given date period by product type
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: false
+ *         description: The first date for the range
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: endDate
+ *         required: false
+ *         description: The end date for the range
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: A list of product's type purchase details
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               productType:
+ *                 type: string
+ *                 description: The product type that has been purchased in the date range
+ *               total:
+ *                 type: integer
+ *                 description: The amount of products purchased in the date range
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+analyticsRouter.get("/product-type", verifyToken, (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.admin) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { startDate: startDateStr, endDate: endDateStr } = req.query;
+  const startDate =
+    typeof startDateStr === "string" && isValidDateFormat(startDateStr)
+      ? new Date(startDateStr)
+      : new Date(new Date().setMonth(new Date().getMonth() - 1));
+  const endDate =
+    typeof endDateStr === "string" && isValidDateFormat(endDateStr)
+      ? new Date(endDateStr)
+      : new Date();
+  getPurchasesPerProductType(startDate, endDate)
     .then((data) => res.json(data))
     .catch((err) => {
       console.error(err);
