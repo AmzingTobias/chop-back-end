@@ -23,6 +23,7 @@ import basketRouter from "./routes/v1/basket.routes";
 import { TAccountAuth } from "./security/security";
 import { EResponseStatusCodes } from "./common/response-types";
 import discountRouter from "./routes/v1/discounts.routes";
+import analyticsRouter from "./routes/v1/analytics.routes";
 
 // Swagger Docs
 const swaggerSpecv1 = swaggerJSDoc({
@@ -113,6 +114,7 @@ app.use("/v1/products/base", baseProductRouter);
 app.use("/v1/products/questions", productQuestionsRouter);
 app.use("/v1/products", productRouter);
 
+app.use("/v1/analytics", analyticsRouter);
 app.use("/v1/discounts", discountRouter);
 app.use("/v1/basket", basketRouter);
 app.use("/v1/product-types", productTypeRouter);
