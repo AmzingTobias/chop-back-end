@@ -11,6 +11,7 @@ import {
   getViewHistoryAnalytics,
 } from "../../models/analytics.models";
 import { start } from "repl";
+import basketWebSockets from "../../data/websockets";
 
 function isValidDateFormat(dateToTest: string) {
   // Regular expression for yyyy-mm-dd format
@@ -262,6 +263,35 @@ analyticsRouter.get("/brands", verifyToken, (req, res) => {
       console.error(err);
       return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
     });
+});
+
+/**
+ * @swagger
+ * /analytics/customer-count:
+ *   get:
+ *     tags: [Analytics]
+ *     summary: Get the number of customers currently online
+ *     responses:
+ *       200:
+ *         description: The number of customers currently online
+ *         schema:
+ *           ype: object
+ *           roperties:
+ *            count:
+ *              type: number
+ *              description: The number of customers currently online
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+analyticsRouter.get("/customer-count", verifyToken, (req, res) => {
+  if (!req.user || req.user.accountType !== EAccountTypes.admin) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  res.json({ count: basketWebSockets.size });
 });
 
 export default analyticsRouter;
