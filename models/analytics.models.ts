@@ -19,12 +19,11 @@ export const getPurchaseAmountPerDate = (
     pool.query(
       `
     SELECT SUM(quantity) AS "totalProductsSold",
-    SUM(price_paid)::money::numeric::float8 AS "totalAmount",
-    orders.placed_on::date AS "placedOn"
-    FROM product_orders
-    LEFT JOIN orders on product_orders.order_id = orders.id
+    SUM(orders_with_products_view.item_price_at_purchase)::money::numeric::float8 AS "totalAmount",
+    orders_with_products_view.order_placed_on::date AS "placedOn"
+    FROM orders_with_products_view
     ${productId !== undefined ? "WHERE product_id = $1" : ""}
-    GROUP BY orders.placed_on::date
+    GROUP BY orders_with_products_view.order_placed_on::date
     `,
       parameters,
       (err, res) => {
