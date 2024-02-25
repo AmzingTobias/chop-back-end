@@ -10,10 +10,12 @@ export type TPurchaseAmountPerDate = {
  * Get purchase amount per date
  * @returns List of TPurchaseAmountPerDate
  */
-export const getPurchaseAmountPerDate = (): Promise<
-  TPurchaseAmountPerDate[]
-> => {
+export const getPurchaseAmountPerDate = (
+  productId?: string
+): Promise<TPurchaseAmountPerDate[]> => {
   return new Promise((resolve, reject) => {
+    const parameters: any[] = productId === undefined ? [] : [productId];
+
     pool.query(
       `
     SELECT SUM(quantity) AS "totalProductsSold",
@@ -21,8 +23,10 @@ export const getPurchaseAmountPerDate = (): Promise<
     orders.placed_on::date AS "placedOn"
     FROM product_orders
     LEFT JOIN orders on product_orders.order_id = orders.id
+    ${productId !== undefined ? "WHERE product_id = $1" : ""}
     GROUP BY orders.placed_on::date
     `,
+      parameters,
       (err, res) => {
         if (err) {
           reject(err);

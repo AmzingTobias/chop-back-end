@@ -27,6 +27,13 @@ const analyticsRouter = Router();
  *   get:
  *     tags: [Analytics]
  *     summary: Get a list of purchase analytics, grouped by date
+ *     parameters:
+ *      - in: query
+ *        name: productId
+ *        required: false
+ *        description: The id of the product to get purchase information for
+ *        schema:
+ *          type: number
  *     responses:
  *       200:
  *         description: A list of purchase analytics per date
@@ -55,7 +62,15 @@ analyticsRouter.get("/purchases", verifyToken, (req, res) => {
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
       .send(ETextResponse.UNAUTHORIZED_REQUEST);
   }
-  getPurchaseAmountPerDate()
+  const { productId } = req.query;
+  if (typeof productId === "string") {
+    if (Number.isNaN(Number(productId))) {
+      return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+    }
+  }
+  getPurchaseAmountPerDate(
+    typeof productId === "string" ? productId : undefined
+  )
     .then((data) => res.json(data))
     .catch((err) => {
       console.error(err);
