@@ -258,6 +258,20 @@ orderRouter.get("/status", (req, res) => {
  *          description: Internal server error
  */
 orderRouter.get("/", verifyToken, (req, res) => {
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.admin ||
+      req.user.accountType === EAccountTypes.warehouse)
+  ) {
+    return getOrdersForCustomer()
+      .then((orders) => {
+        res.json(orders);
+      })
+      .catch((_) => {
+        res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  }
+
   if (!req.user || req.user.accountType !== EAccountTypes.customer) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)

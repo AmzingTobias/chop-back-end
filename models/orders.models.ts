@@ -57,9 +57,10 @@ type TOrderEntry = {
  * @returns A list of orders placed by the customer
  */
 export const getOrdersForCustomer = (
-  customerId: number
+  customerId?: number
 ): Promise<TOrderEntry[]> => {
   return new Promise((resolve, reject) => {
+    const parameters = customerId === undefined ? [] : [customerId];
     pool.query(
       `
     SELECT 
@@ -74,11 +75,11 @@ export const getOrdersForCustomer = (
     LEFT JOIN order_statuses ON orders.status_id = order_statuses.id
     LEFT JOIN product_orders ON orders.id = product_orders.order_id
     JOIN shipping_addresses ON orders.shipping_address_id = shipping_addresses.id
-    WHERE orders.customer_id = $1
+    ${customerId ? "WHERE orders.customer_id = $1" : ""}
     GROUP BY order_statuses.status, orders.id, orders.placed_on
     ORDER BY orders.placed_on DESC
     `,
-      [customerId],
+      parameters,
       (err, res) => {
         if (err) {
           console.error(err);
