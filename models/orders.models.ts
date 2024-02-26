@@ -107,9 +107,11 @@ type TProductInOrder = {
  */
 export const getProductsInOrder = (
   orderId: number,
-  customerId: number
+  customerId?: number
 ): Promise<TProductInOrder[]> => {
   return new Promise((resolve, reject) => {
+    const parameters =
+      customerId === undefined ? [orderId] : [orderId, customerId];
     pool.query(
       `
     SELECT
@@ -119,9 +121,11 @@ export const getProductsInOrder = (
       item_price_at_purchase::money::numeric::float8 AS "price"
     FROM orders_with_products_view
     LEFT JOIN product_view ON product_view.id = orders_with_products_view.product_id
-    WHERE order_id = $1 AND customer_id = $2
+    WHERE order_id = $1 ${
+      customerId === undefined ? "" : "AND customer_id = $2"
+    }
     `,
-      [orderId, customerId],
+      parameters,
       (err, res) => {
         if (err) {
           console.error(err);
@@ -332,8 +336,8 @@ export const updateOrderStatus = (
 ): Promise<EDatabaseResponses> => {
   return new Promise((resolve, reject) => {
     pool.query(
-      "UPDATE FROM orders SET status_id = $1 WHERE id = $2",
-      [orderId, orderStatusId],
+      "UPDATE orders SET status_id = $1 WHERE id = $2",
+      [orderStatusId, orderId],
       (err: ICustomError, res) => {
         if (err) {
           if (err.code === FOREIGN_KEY_VIOLATION) {
@@ -361,28 +365,33 @@ export const updateOrderStatus = (
  * @returns An order entry, or null if the order does not exist
  */
 export const getOrderDetails = (
-  customerId: number,
-  orderId: number
+  orderId: number,
+  customerId?: number
 ): Promise<TOrderEntry | null> => {
   return new Promise((resolve, reject) => {
+    const parameters =
+      customerId === undefined ? [orderId] : [orderId, customerId];
     pool.query(
       `
       SELECT 
         orders.id, 
         order_statuses.status, 
+        orders.shipping_address_id AS "shippingAddressId",
         COUNT(product_id)::numeric::integer AS "product_count", 
         sum(PRODUCT_ORDERS.item_price_at_purchase * product_orders.quantity)::money::numeric::float8 AS "total",
         orders.price_paid::money::numeric::float8 AS "pricePaid",
-        orders.placed_on
+        orders.placed_on 
       FROM orders
       LEFT JOIN order_statuses ON orders.status_id = order_statuses.id
       LEFT JOIN product_orders ON orders.id = product_orders.order_id
       JOIN shipping_addresses ON orders.shipping_address_id = shipping_addresses.id
-      WHERE orders.customer_id = $1 AND orders.id = $2
+      WHERE orders.id = $1 ${
+        customerId === undefined ? "" : " AND orders.customer_id = $2"
+      }
       GROUP BY order_statuses.status, orders.id, orders.placed_on
       ORDER BY orders.placed_on DESC
     `,
-      [customerId, orderId],
+      parameters,
       (err, res) => {
         if (err) {
           console.error(err);
@@ -403,9 +412,11 @@ export const getOrderDetails = (
  */
 export const getDiscountsUsedForOrder = (
   orderId: number,
-  customerId: number
+  customerId?: number
 ): Promise<{ code: string }[]> => {
   return new Promise((resolve, reject) => {
+    const parameters =
+      customerId === undefined ? [orderId] : [orderId, customerId];
     pool.query(
       `
     SELECT
@@ -413,9 +424,11 @@ export const getDiscountsUsedForOrder = (
     FROM discount_codes_for_order
     LEFT JOIN discount_codes ON discount_codes_for_order.discount_code_id = discount_codes.id
     LEFT JOIN orders ON discount_codes_for_order.order_id = orders.id
-    WHERE order_id = $1 AND customer_id = $2
+    WHERE order_id = $1 ${
+      customerId === undefined ? "" : " AND customer_id = $2"
+    }
     `,
-      [orderId, customerId],
+      parameters,
       (err, res) => {
         if (err) {
           reject(err);

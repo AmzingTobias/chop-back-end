@@ -13,6 +13,7 @@ import {
   getPossibleOrderStatuses,
   getProductsInOrder,
   placeOrder,
+  updateOrderStatus,
 } from "../../models/orders.models";
 import { sendBasketContentsToAllCustomerClients } from "./basket.routes";
 import { isArrayOfStrings } from "../../common/validation";
@@ -20,6 +21,7 @@ import {
   TDiscountCodeValidation,
   validateDiscountCode,
 } from "../../models/discount.models";
+import { EDatabaseResponses } from "../../data/data";
 
 export const orderRouter = Router();
 
@@ -333,20 +335,34 @@ orderRouter.get("/", verifyToken, (req, res) => {
  *          description: Internal server error
  */
 orderRouter.get("/:orderId", verifyToken, (req, res) => {
-  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
-    return res
-      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
-      .send(ETextResponse.UNAUTHORIZED_REQUEST);
-  }
-  const customerId = req.user.accountTypeId;
   const { orderId } = req.params;
   if (Number.isNaN(Number(orderId))) {
     return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   }
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.admin ||
+      req.user.accountType === EAccountTypes.support ||
+      req.user.accountType === EAccountTypes.warehouse)
+  ) {
+    return getOrderDetails(Number(orderId))
+      .then((order) => {
+        res.json({ order: order });
+      })
+      .catch((_) => {
+        res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  }
+  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const customerId = req.user.accountTypeId;
 
-  getOrderDetails(customerId, Number(orderId))
+  getOrderDetails(Number(orderId), customerId)
     .then((order) => {
       res.json({ order: order });
     })
@@ -393,18 +409,34 @@ orderRouter.get("/:orderId", verifyToken, (req, res) => {
  *          description: Internal server error
  */
 orderRouter.get("/:orderId/products", verifyToken, (req, res) => {
-  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
-    return res
-      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
-      .send(ETextResponse.UNAUTHORIZED_REQUEST);
-  }
-  const customerId = req.user.accountTypeId;
   const { orderId } = req.params;
   if (Number.isNaN(Number(orderId))) {
     return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   }
+
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.admin ||
+      req.user.accountType === EAccountTypes.support ||
+      req.user.accountType === EAccountTypes.warehouse)
+  ) {
+    return getProductsInOrder(Number(orderId))
+      .then((products) => {
+        res.json(products);
+      })
+      .catch((_) => {
+        res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  }
+
+  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const customerId = req.user.accountTypeId;
 
   getProductsInOrder(Number(orderId), customerId)
     .then((products) => {
@@ -443,18 +475,34 @@ orderRouter.get("/:orderId/products", verifyToken, (req, res) => {
  *          description: Internal server error
  */
 orderRouter.get("/:orderId/discounts", verifyToken, (req, res) => {
-  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
-    return res
-      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
-      .send(ETextResponse.UNAUTHORIZED_REQUEST);
-  }
-  const customerId = req.user.accountTypeId;
   const { orderId } = req.params;
   if (Number.isNaN(Number(orderId))) {
     return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   }
+
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.admin ||
+      req.user.accountType === EAccountTypes.support ||
+      req.user.accountType === EAccountTypes.warehouse)
+  ) {
+    return getDiscountsUsedForOrder(Number(orderId))
+      .then((codes) => {
+        res.json(codes);
+      })
+      .catch((_) => {
+        res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  }
+
+  if (!req.user || req.user.accountType !== EAccountTypes.customer) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const customerId = req.user.accountTypeId;
 
   getDiscountsUsedForOrder(Number(orderId), customerId)
     .then((codes) => {
@@ -463,4 +511,73 @@ orderRouter.get("/:orderId/discounts", verifyToken, (req, res) => {
     .catch((_) => {
       res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
     });
+});
+
+/**
+ * @swagger
+ * /orders/{orderId}/status}:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Update an order's status
+ *     parameters:
+ *       - in: params
+ *         name: orderId
+ *         required: true
+ *         description: The id of the order to update
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: orderStatusId
+ *         required: true
+ *         description: The order status to set for the order
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: Order status updated
+ *       400:
+ *          description: Fields missing in request, or order id does not exist
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+orderRouter.post("/:orderId/status", verifyToken, (req, res) => {
+  const { orderId } = req.params;
+  if (Number.isNaN(Number(orderId))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  const { orderStatusId } = req.body;
+  if (typeof orderStatusId !== "number") {
+    return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+  }
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.admin ||
+      req.user.accountType === EAccountTypes.support ||
+      req.user.accountType === EAccountTypes.warehouse)
+  ) {
+    return updateOrderStatus(Number(orderId), orderStatusId)
+      .then((databaseResponse) => {
+        switch (databaseResponse) {
+          case EDatabaseResponses.OK:
+            return res.sendStatus(200);
+          case EDatabaseResponses.DOES_NOT_EXIST:
+            return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+          case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
+            return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+          default:
+            return res.sendStatus(
+              EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+            );
+        }
+      })
+      .catch((_) => {
+        return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  } else {
+    res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+  }
 });
