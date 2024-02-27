@@ -20,6 +20,7 @@ import {
   ETextResponse,
 } from "../../../common/response-types";
 import { EDatabaseResponses } from "../../../data/data";
+import { env } from "process";
 
 export const authRouter = Router();
 
@@ -34,7 +35,11 @@ export const authRouter = Router();
  *          description: Logout succesful
  */
 authRouter.post("/logout", (_, res) => {
-  res.clearCookie("auth");
+  if (env.COOKIE_DOMAIN !== undefined && env.COOKIE_DOMAIN !== "localhost") {
+    res.clearCookie("auth", { path: "/", domain: env.COOKIE_DOMAIN });
+  } else {
+    res.clearCookie("auth");
+  }
   res.send(ETextResponse.LOGOUT_SUCCESFUL);
 });
 
