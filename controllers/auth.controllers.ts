@@ -119,7 +119,6 @@ export const login_to_account_controller = async (
                           ...COOKIE_OPTIONS,
                         }
                       );
-                      console.log(COOKIE_OPTIONS);
                       const sessionId = uuidv4();
                       res.cookie("sessionId", sessionId, COOKIE_OPTIONS);
                       res.json({ success: true });
