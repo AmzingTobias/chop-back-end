@@ -3,6 +3,7 @@ import {
   createNewShippingAddress,
   deleteDefaultShippingAddress,
   deleteShippingAddress,
+  getAddressWithId,
   getAllAddressesForCustomer,
   getCountriesAvailableForShipping,
   getDefaultShippingAddress,
@@ -527,5 +528,77 @@ addressBookRouter.delete("/", verifyToken, (req, res) => {
       return res
         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
         .send(ETextResponse.INTERNAL_ERROR);
+    });
+});
+
+/**
+ * @swagger
+ * /auth/address/{addressId}:
+ *   get:
+ *     tags: [Address]
+ *     summary: Get an address with an Id
+ *     responses:
+ *       200:
+ *          description: The address or null if one does not exist
+ *          schema:
+ *          type: object
+ *          properties:
+ *            address:
+ *              type: object
+ *              properties:
+ *                id:
+ *                  type: integer
+ *                  description: The id of the shipping address
+ *                  example: 1
+ *                areaCode:
+ *                  type: string
+ *                  description: The area code of the shipping address.
+ *                  example: EC1A 1BB
+ *                firstAddressLine:
+ *                  type: string
+ *                  description: The first line of the address.
+ *                  example: 123 The Street
+ *                secondAddressLine:
+ *                  type: string | null
+ *                  description: The second line of the address if it exists.
+ *                countryState:
+ *                  type: string
+ *                  description: The state / county the address is in
+ *                  example: London
+ *                countryId:
+ *                  type: number
+ *                  description: The id of the country the address is in
+ *                  example: 1
+ *                countryName:
+ *                  type: string
+ *                  description: The name of the country the address is in
+ *                  example: United Kingdom
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+addressBookRouter.get("/:addressId", verifyToken, (req, res) => {
+  if (
+    req.user === undefined ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.support &&
+      req.user.accountType !== EAccountTypes.warehouse)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { addressId } = req.params;
+  if (Number.isNaN(Number(addressId))) {
+    return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+  }
+  getAddressWithId(Number(addressId))
+    .then((addressFound) => {
+      res.json({ address: addressFound });
+    })
+    .catch((err) => {
+      console.error(err);
+      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
     });
 });

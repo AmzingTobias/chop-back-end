@@ -4,8 +4,12 @@ import {
   assignProductTypesToBaseProduct,
   createNewBaseProduct,
   deleteBaseProduct,
+  getAllBaseProducts,
+  getProductIdsWithBaseId,
+  getProductTypesWithBaseId,
   unassignProductTypesFromBaseProduct,
   updateBaseProductBrand,
+  updateBaseProductDescription,
 } from "../../../models/products/base-product.models";
 import {
   EResponseStatusCodes,
@@ -110,6 +114,181 @@ baseProductRouter.post("/", verifyToken, (req, res) => {
 
 /**
  * @swagger
+ * /products/base:
+ *   get:
+ *     tags: [Base Products]
+ *     summary: Get all base products
+ *     responses:
+ *       200:
+ *          description: List of base products
+ *          schema:
+ *            type: array
+ *            items:
+ *              type: object
+ *              properties:
+ *                id:
+ *                  type: integer
+ *                  description: The id of the base product
+ *                brandName:
+ *                  type: string
+ *                  description: The brand name of the base product if it exists
+ *                description:
+ *                  type: string
+ *                  description: Description for the base product
+ *                productCount:
+ *                  type: integer
+ *                  description: The number of products that use this base product
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+baseProductRouter.get("/", verifyToken, (req, res) => {
+  // Auth check, user must be sales, admin, or warehouse
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales &&
+      req.user.accountType !== EAccountTypes.warehouse)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  getAllBaseProducts()
+    .then((products) => res.json(products))
+    .catch((err) => {
+      console.error(err);
+      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
+});
+
+/**
+ * @swagger
+ * /products/base/{id}:
+ *   get:
+ *     tags: [Base Products]
+ *     summary: Get all products that are childs of a base product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the base product to get the product list for
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *          description: List of  products tied to the base product
+ *          schema:
+ *            type: array
+ *            items:
+ *              type: object
+ *              properties:
+ *                id:
+ *                  type: integer
+ *                  description: The id of the product
+ *       400:
+ *          description: Request was invalid
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+baseProductRouter.get("/:id", verifyToken, (req, res) => {
+  // Auth check, user must be sales, admin, or warehouse
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales &&
+      req.user.accountType !== EAccountTypes.warehouse)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  getProductIdsWithBaseId(Number(id))
+    .then((data) => res.json(data))
+    .catch((err) => {
+      console.error(err);
+      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
+});
+
+/**
+ * @swagger
+ * /products/base/{id}:
+ *   put:
+ *     tags: [Base Products]
+ *     summary: Update a base product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the base product to update
+ *         schema:
+ *           type: integer
+ *       - in: body
+ *         name: description
+ *         required: true
+ *         description: The new description for the base product
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *          description: Base product updated
+ *       400:
+ *          description: Base product does not exist to update
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+baseProductRouter.put("/:id", verifyToken, (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  const { description } = req.body;
+  if (Number.isNaN(Number(id)) || typeof description !== "string") {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  updateBaseProductDescription(Number(id), description)
+    .then((updated) => {
+      switch (updated) {
+        case EDatabaseResponses.OK:
+          return res.sendStatus(200);
+        case EDatabaseResponses.DOES_NOT_EXIST:
+          return res
+            .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+            .send(ETextResponse.BASE_PRODUCT_ID_NOT_EXIST);
+        default:
+          return res.sendStatus(
+            EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+          );
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
+});
+
+/**
+ * @swagger
  * /products/base/{id}:
  *   delete:
  *     tags: [Base Products, Products]
@@ -145,7 +324,7 @@ baseProductRouter.delete("/:id", verifyToken, (req, res) => {
   }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
-    res
+    return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
@@ -187,7 +366,7 @@ baseProductRouter.delete("/:id", verifyToken, (req, res) => {
  *         schema:
  *           type: integer
  *       - in: body
- *         name: brand-id
+ *         name: brandId
  *         required: true
  *         description: The new brand id for the prduct
  *         schema:
@@ -214,11 +393,11 @@ baseProductRouter.put("/:id/brand", verifyToken, async (req, res) => {
   }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
-    res
+    return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
-    const { "brand-id": brandId } = req.body;
+    const { brandId } = req.body;
     if (typeof brandId === "number") {
       try {
         const updated = await updateBaseProductBrand(Number(id), brandId);
@@ -289,7 +468,7 @@ baseProductRouter.delete("/:id/brand", verifyToken, async (req, res) => {
   }
   const { id } = req.params;
   if (Number.isNaN(Number(id))) {
-    res
+    return res
       .status(EResponseStatusCodes.BAD_REQUEST_CODE)
       .send(ETextResponse.ID_INVALID_IN_REQ);
   } else {
@@ -297,23 +476,82 @@ baseProductRouter.delete("/:id/brand", verifyToken, async (req, res) => {
       const deleted = await updateBaseProductBrand(Number(id));
       switch (deleted) {
         case EDatabaseResponses.OK:
-          res.send(ETextResponse.BRAND_DELETED);
-          break;
+          return res.send(ETextResponse.BRAND_DELETED);
         case EDatabaseResponses.DOES_NOT_EXIST:
-          res
+          return res
             .status(EResponseStatusCodes.BAD_REQUEST_CODE)
             .send(ETextResponse.BASE_PRODUCT_ID_NOT_EXIST);
-          break;
         default:
-          res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
-          break;
+          return res.sendStatus(
+            EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+          );
       }
     } catch (_) {
-      res
+      return res
         .status(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE)
         .send(ETextResponse.INTERNAL_ERROR);
     }
   }
+});
+
+/**
+ * @swagger
+ * /products/base/{id}/product-types:
+ *   get:
+ *     tags: [Base Products, Products, Product types]
+ *     summary: Get product types assigned to a base product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The id of the base product
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: A list of product types
+ *         schema:
+ *            type: array
+ *            items:
+ *              type: object
+ *              properties:
+ *               id:
+ *                 type: integer
+ *                 description: The id of the product type.
+ *                 example: 1
+ *               type:
+ *                 type: string
+ *                 description: The name of the product type.
+ *                 example: Technology
+ *       400:
+ *          description: Base product id missing
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+baseProductRouter.get("/:id/product-types", verifyToken, (req, res) => {
+  if (
+    !req.user ||
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
+  ) {
+    return res
+      .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
+      .send(ETextResponse.UNAUTHORIZED_REQUEST);
+  }
+  const { id } = req.params;
+  if (Number.isNaN(Number(id))) {
+    return res
+      .status(EResponseStatusCodes.BAD_REQUEST_CODE)
+      .send(ETextResponse.ID_INVALID_IN_REQ);
+  }
+  getProductTypesWithBaseId(Number(id))
+    .then((data) => res.json(data))
+    .catch((err) => {
+      console.error(err);
+      return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+    });
 });
 
 /**

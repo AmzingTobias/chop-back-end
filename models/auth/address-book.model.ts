@@ -287,3 +287,38 @@ export const deleteShippingAddress = (
     );
   });
 };
+
+/**
+ * Get an address using an address id
+ * @param addressId The id of the address
+ * @returns TCustomerAddress if the address exists, null if it does not
+ */
+export const getAddressWithId = (
+  addressId: number
+): Promise<TCustomerAddress | null> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+      SELECT 
+        shipping_addresses.id, 
+        area_code AS "areaCode", 
+        first_address_line AS "firstAddressLine", 
+        second_address_line AS "secondAddressLine", 
+        state AS "countryState", 
+        country_id AS "countryId", 
+        shipping_countries.name AS "countryName"
+      FROM shipping_addresses 
+      LEFT JOIN shipping_countries on shipping_countries.id = shipping_addresses.country_id
+      WHERE shipping_addresses.id = $1
+    `,
+      [addressId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rowCount > 0 ? res.rows[0] : null);
+        }
+      }
+    );
+  });
+};

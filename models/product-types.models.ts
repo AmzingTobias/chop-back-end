@@ -1,9 +1,10 @@
 import { UNIQUE_CONSTRAINT_FAILED } from "../common/postgresql-error-codes";
 import pool, { EDatabaseResponses, ICustomError } from "../data/data";
 
-type TProductTypeEntry = {
+export type TProductTypeEntry = {
   id: number;
   type: string;
+  productCount: number;
 };
 
 /**
@@ -13,7 +14,15 @@ type TProductTypeEntry = {
 export const getAllProductTypes = (): Promise<TProductTypeEntry[]> => {
   return new Promise((resolve, reject) => {
     pool.query(
-      "SELECT id, type FROM product_types",
+      `
+      SELECT
+        product_types.id,
+        product_types.type,
+        COUNT(apt.product_id) AS "productCount"
+      FROM product_types
+      LEFT JOIN public.assigned_product_type apt on product_types.id = apt.type_id
+      GROUP BY product_types.id
+      `,
       (err: ICustomError, res) => {
         if (err) {
           console.error(`${err.code}: ${err.message}`);

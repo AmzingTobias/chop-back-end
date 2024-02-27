@@ -95,30 +95,38 @@ export const createNewProductVariant = (
   baseProductId: number,
   productName: string,
   price: number,
-  description?: string
-): Promise<EDatabaseResponses> => {
+  description?: string,
+  available: boolean = false,
+  stockCount: number = 0
+): Promise<{ status: EDatabaseResponses; createdId: number | undefined }> => {
   return new Promise(async (resolve, reject) => {
     try {
       const client = await pool.connect();
       let transactionStatus: EDatabaseResponses | undefined = undefined;
+      let productIdCreated: number | undefined = undefined;
       try {
         await client.query("BEGIN");
         const createProductQuery =
-          "INSERT INTO products(name, base_product_id, description) VALUES ($1, $2, $3) RETURNING id";
+          "INSERT INTO products(name, available, base_product_id, description) VALUES ($1, $2, $3, $4) RETURNING id";
         const res = await client.query(createProductQuery, [
           productName,
+          available,
           baseProductId,
           description,
         ]);
         const createProductStockLevelQuery =
-          "INSERT INTO product_stock_levels(product_id) VALUES($1)";
-        await client.query(createProductStockLevelQuery, [res.rows[0].id]);
+          "INSERT INTO product_stock_levels(product_id, amount) VALUES($1, $2)";
+        await client.query(createProductStockLevelQuery, [
+          res.rows[0].id,
+          stockCount,
+        ]);
         const createProductPriceQuery =
           "INSERT INTO product_prices(product_id, price) VALUES($1, $2)";
         await client.query(createProductPriceQuery, [
           res.rows[0].id,
           price.toFixed(2),
         ]);
+        productIdCreated = res.rows[0].id;
         await client.query("COMMIT");
         transactionStatus = EDatabaseResponses.OK;
       } catch (err) {
@@ -135,7 +143,7 @@ export const createNewProductVariant = (
         if (transactionStatus === undefined) {
           reject();
         } else {
-          resolve(transactionStatus);
+          resolve({ status: transactionStatus, createdId: productIdCreated });
         }
       }
     } catch (err) {
@@ -193,7 +201,7 @@ export const getProductsByType = (
 ): Promise<IBaseProductEntry[]> => {
   return new Promise((resolve, reject) => {
     const getProductsForTypeQuery = `
-    SELECT
+    SELECT DISTINCT
       id, 
       name, 
       description,
@@ -344,7 +352,8 @@ export const getProductsByName = (
       "brandId",
       stock_count, 
       price::money::numeric::float8,
-      description
+      description,
+      base_product_id AS "baseProductId"
     FROM product_view
     WHERE to_tsvector(name) @@ websearch_to_tsquery($1) ORDER BY ts_rank(to_tsvector(name),  websearch_to_tsquery($1)) desc
     `,
@@ -402,6 +411,66 @@ export const getProductsOfSameStyle = (
           reject(err);
         } else {
           resolve(res.rows as IProductEntry[]);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Update a product's stock levels
+ * @param productId The id of the product to update the stock count
+ * @param stockCount The new stock count for the product
+ * @returns EDatabaseResponses.OK if the stock count is updated.
+ * EDatabaseResponses.DOES_NOT_EXIST if the product does not exist to update the stock for
+ */
+export const updateProductStock = (
+  productId: number,
+  stockCount: number
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `UPDATE product_stock_levels SET amount = $1 WHERE product_id = $2`,
+      [stockCount, productId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Update a product's availability
+ * @param productId The id of the product to update
+ * @param available The availability of the product
+ * @returns EDatabaseResponses.OK if the availability is updated.
+ * EDatabaseResponses.DOES_NOT_EXIST if the product does not exist to update the availability for
+ */
+export const updateProductAvailability = (
+  productId: number,
+  available: boolean
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `UPDATE products SET available = $1 WHERE id = $2`,
+      [available, productId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
         }
       }
     );

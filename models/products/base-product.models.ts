@@ -3,6 +3,7 @@ import {
   FOREIGN_KEY_VIOLATION,
   UNIQUE_CONSTRAINT_FAILED,
 } from "../../common/postgresql-error-codes";
+import { TProductTypeEntry } from "../product-types.models";
 
 /**
  * Create a new base product variation
@@ -260,5 +261,166 @@ export const unassignProductTypesFromBaseProduct = (
       console.error(err);
       reject(err);
     }
+  });
+};
+
+type TBaseProduct = {
+  id: number;
+  brandName: string;
+  description: string;
+  productCount: number;
+};
+
+/**
+ * Get all the base products
+ * @returns A list of the base products
+ */
+export const getAllBaseProducts = (): Promise<TBaseProduct[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT
+      base_products.id,
+      COALESCE(brands.name, ''::character varying) AS "brandName",
+      base_products.description,
+      COUNT(products.id) AS "productCount"
+    FROM base_products
+    LEFT JOIN brands ON base_products.brand_id = brands.id
+    LEFT JOIN products ON base_products.id = products.base_product_id
+    GROUP BY base_products.id, brands.name, base_products.description
+    ORDER BY base_products.id ASC
+    `,
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get a list of all the product ids who have the base id provided
+ * @param baseId The base id to get all the products with
+ * @returns A list of products who all share the same base id
+ */
+export const getProductIdsWithBaseId = (
+  baseId: number
+): Promise<{ id: number }[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      "SELECT id FROM products WHERE base_product_id = $1",
+      [baseId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get the product types assigned to a base product
+ * @param baseId The base product id
+ * @returns A list of product types assigned to the base product
+ */
+export const getProductTypesWithBaseId = (
+  baseId: number
+): Promise<TProductTypeEntry[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+      SELECT 
+        product_types.id, 
+        product_types.type 
+      FROM product_types 
+      LEFT JOIN assigned_product_type on product_types.id = assigned_product_type.type_id
+      WHERE product_id = $1
+      `,
+      [baseId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get the base products assigned to a brand
+ * @param brandId The id of the brand
+ * @returns A list of base products
+ */
+export const getBaseProductsWithBrand = (
+  brandId: number
+): Promise<TBaseProduct[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT
+      base_products.id,
+      COALESCE(brands.name, ''::character varying) AS "brandName",
+      base_products.description,
+      COUNT(products.id) AS "productCount"
+    FROM base_products
+    LEFT JOIN brands ON base_products.brand_id = brands.id
+    LEFT JOIN products ON base_products.id = products.base_product_id
+    WHERE base_products.brand_id = $1
+    GROUP BY base_products.id, brands.name, base_products.description
+    ORDER BY base_products.id ASC
+  `,
+      [brandId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get the base products assigned to a product type
+ * @param productTypeId The id of the product type
+ * @returns A list of base products
+ */
+export const getBaseProductsWithProductType = (
+  productTypeId: number
+): Promise<TBaseProduct[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT
+      base_products.id,
+      COALESCE(brands.name, ''::character varying) AS "brandName",
+      base_products.description,
+      COUNT(products.id) AS "productCount"
+    FROM base_products
+    LEFT JOIN brands ON base_products.brand_id = brands.id
+    LEFT JOIN assigned_product_type ON base_products.id = assigned_product_type.product_id
+    LEFT JOIN products ON base_products.id = products.base_product_id
+    WHERE assigned_product_type.type_id = $1
+    GROUP BY base_products.id, brands.name, base_products.description
+    ORDER BY base_products.id ASC
+  `,
+      [productTypeId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
   });
 };
