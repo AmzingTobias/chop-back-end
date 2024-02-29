@@ -87,8 +87,8 @@ brandRouter.get("/", async (_, res) => {
 brandRouter.post("/", verifyToken, async (req, res) => {
   if (
     !req.user ||
-    req.user.accountTypeId !== EAccountTypes.sales ||
-    req.user.accountType !== EAccountTypes.admin
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
   ) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
@@ -161,8 +161,8 @@ brandRouter.post("/", verifyToken, async (req, res) => {
 brandRouter.put("/:id", verifyToken, async (req, res) => {
   if (
     !req.user ||
-    req.user.accountTypeId !== EAccountTypes.sales ||
-    req.user.accountType !== EAccountTypes.admin
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
   ) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
@@ -423,8 +423,8 @@ brandRouter.get("/:id/products", async (req, res) => {
 brandRouter.get("/:id/base-products", verifyToken, (req, res) => {
   if (
     !req.user ||
-    req.user.accountTypeId !== EAccountTypes.sales ||
-    req.user.accountType !== EAccountTypes.admin
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
   ) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)

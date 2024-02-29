@@ -87,8 +87,8 @@ productTypeRouter.get("/", async (_, res) => {
 productTypeRouter.post("/", verifyToken, async (req, res) => {
   if (
     !req.user ||
-    req.user.accountTypeId !== EAccountTypes.sales ||
-    req.user.accountType !== EAccountTypes.admin
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
   ) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
@@ -165,8 +165,8 @@ productTypeRouter.post("/", verifyToken, async (req, res) => {
 productTypeRouter.get("/:id/base-products", verifyToken, (req, res) => {
   if (
     !req.user ||
-    req.user.accountTypeId !== EAccountTypes.sales ||
-    req.user.accountType !== EAccountTypes.admin
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
   ) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
@@ -220,8 +220,8 @@ productTypeRouter.get("/:id/base-products", verifyToken, (req, res) => {
 productTypeRouter.put("/:id", verifyToken, async (req, res) => {
   if (
     !req.user ||
-    req.user.accountTypeId !== EAccountTypes.sales ||
-    req.user.accountType !== EAccountTypes.admin
+    (req.user.accountType !== EAccountTypes.admin &&
+      req.user.accountType !== EAccountTypes.sales)
   ) {
     return res
       .status(EResponseStatusCodes.UNAUTHORIZED_CODE)
