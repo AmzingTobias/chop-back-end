@@ -4,6 +4,7 @@ import { EResponseStatusCodes } from "../../common/response-types";
 import {
   createNewSupportTicket,
   getAllTicketsForCustomer,
+  markTicketAsClosed,
 } from "../../models/support.models";
 import { EDatabaseResponses } from "../../data/data";
 
@@ -64,6 +65,43 @@ supportRouter.post("/", verifyToken, (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /support:
+ *   get:
+ *     tags: [Support]
+ *     summary: Get all tickets for a customer
+ *     parameters:
+ *       - in: params
+ *         name: customerId
+ *         required: false
+ *         description: The id of the customer
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: A list of tickets associated to the user
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *              createdOn:
+ *                type: Date
+ *                description: The date the ticket was created
+ *              closedOn:
+ *                type: Date | null
+ *                description: The date the ticket was closed or null
+ *              title:
+ *                type: string
+ *                description: The title of the ticket
+ *       400:
+ *          description: Fields missing in request
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
 supportRouter.get("/", verifyToken, (req, res) => {
   if (
     req.user &&
@@ -85,6 +123,68 @@ supportRouter.get("/", verifyToken, (req, res) => {
   if (req.user && req.user.accountType === EAccountTypes.customer) {
     return getAllTicketsForCustomer(req.user.accountTypeId)
       .then((tickets) => res.json(tickets))
+      .catch((err) => {
+        console.error(err);
+        return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  }
+
+  return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+});
+
+/**
+ * @swagger
+ * /support/{ticketId}/close:
+ *   post:
+ *     tags: [Support]
+ *     summary: Set a ticket to be closed
+ *     parameters:
+ *       - in: query
+ *         name: ticketId
+ *         required: true
+ *         description: The id of the ticket to close
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: The ticket was closed
+ *       400:
+ *          description: Fields missing in request
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+supportRouter.post("/:ticketId/close", verifyToken, (req, res) => {
+  const { ticketId } = req.params;
+  const ticketIdAsNumber = Number(ticketId);
+  if (Number.isNaN(ticketIdAsNumber)) {
+    return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+  }
+
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.admin ||
+      req.user.accountType === EAccountTypes.support ||
+      req.user.accountType === EAccountTypes.customer)
+  ) {
+    const customerId =
+      req.user.accountType === EAccountTypes.customer
+        ? req.user.accountTypeId
+        : undefined;
+    return markTicketAsClosed(ticketIdAsNumber, customerId)
+      .then((databaseResponse) => {
+        switch (databaseResponse) {
+          case EDatabaseResponses.OK:
+            return res.sendStatus(200);
+          case EDatabaseResponses.DOES_NOT_EXIST:
+            return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+          default:
+            return res.sendStatus(
+              EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+            );
+        }
+      })
       .catch((err) => {
         console.error(err);
         return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);

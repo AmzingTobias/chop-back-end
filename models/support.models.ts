@@ -72,3 +72,31 @@ export const getAllTicketsForCustomer = (
     );
   });
 };
+
+export const markTicketAsClosed = (
+  ticketId: number,
+  customerId?: number
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    const parameters =
+      customerId === undefined ? [ticketId] : [ticketId, customerId];
+    pool.query(
+      `
+      UPDATE support_tickets SET closed_on = CURRENT_DATE
+      WHERE id = $1 ${customerId === undefined ? "" : "AND customer_id = $2"}
+      `,
+      parameters,
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};
