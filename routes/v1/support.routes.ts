@@ -2,6 +2,7 @@ import { Router } from "express";
 import { EAccountTypes, verifyToken } from "../../security/security";
 import { EResponseStatusCodes } from "../../common/response-types";
 import {
+  addCommentToTicket,
   createNewSupportTicket,
   getAllTicketsForCustomer,
   markTicketAsClosed,
@@ -191,6 +192,77 @@ supportRouter.post("/:ticketId/close", verifyToken, (req, res) => {
       });
   }
 
+  return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+});
+
+/**
+ * @swagger
+ * /support/{ticketId}/comment:
+ *   post:
+ *     tags: [Support]
+ *     summary: Comment on an open ticket
+ *     parameters:
+ *       - in: query
+ *         name: ticketId
+ *         required: true
+ *         description: The id of the ticket
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: comment
+ *         required: true
+ *         description: The comment for the ticket
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: The ticket was commented on
+ *       400:
+ *          description: Fields missing in request or ticket is closed
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+supportRouter.post("/:ticketId/comment", verifyToken, (req, res) => {
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.customer ||
+      req.user.accountType === EAccountTypes.support ||
+      req.user.accountType === EAccountTypes.admin)
+  ) {
+    const accountId = req.user.user_id;
+    const { comment } = req.body;
+    const { ticketId } = req.params;
+    if (
+      typeof comment !== "string" ||
+      comment.trim().length === 0 ||
+      Number.isNaN(Number(ticketId))
+    ) {
+      return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+    } else {
+      return addCommentToTicket(Number(ticketId), accountId, comment.trim())
+        .then((databaseResponse) => {
+          switch (databaseResponse) {
+            case EDatabaseResponses.OK:
+              return res.sendStatus(200);
+            case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
+            case EDatabaseResponses.DOES_NOT_EXIST:
+              return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+            default:
+              return res.sendStatus(
+                EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+              );
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          return res.sendStatus(
+            EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+          );
+        });
+    }
+  }
   return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
 });
 
