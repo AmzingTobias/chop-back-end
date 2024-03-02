@@ -1,7 +1,10 @@
 import { Router } from "express";
 import { EAccountTypes, verifyToken } from "../../security/security";
 import { EResponseStatusCodes } from "../../common/response-types";
-import { createNewSupportTicket } from "../../models/support.models";
+import {
+  createNewSupportTicket,
+  getAllTicketsForCustomer,
+} from "../../models/support.models";
 import { EDatabaseResponses } from "../../data/data";
 
 export const supportRouter = Router();
@@ -30,7 +33,7 @@ export const supportRouter = Router();
  *          description: Internal server error
  */
 supportRouter.post("/", verifyToken, (req, res) => {
-  // Must be customer co create a new support ticket
+  // Must be customer to create a new support ticket
   if (!req.user || req.user.accountType !== EAccountTypes.customer) {
     return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
   }
@@ -59,6 +62,36 @@ supportRouter.post("/", verifyToken, (req, res) => {
         return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
       });
   }
+});
+
+supportRouter.get("/", verifyToken, (req, res) => {
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.support ||
+      req.user.accountType === EAccountTypes.admin)
+  ) {
+    const { customerId } = req.query;
+    if (Number.isNaN(Number(customerId))) {
+      return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+    }
+    return getAllTicketsForCustomer(Number(customerId))
+      .then((tickets) => res.json(tickets))
+      .catch((err) => {
+        console.error(err);
+        return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  }
+
+  if (req.user && req.user.accountType === EAccountTypes.customer) {
+    return getAllTicketsForCustomer(req.user.accountTypeId)
+      .then((tickets) => res.json(tickets))
+      .catch((err) => {
+        console.error(err);
+        return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  }
+
+  return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
 });
 
 export default supportRouter;

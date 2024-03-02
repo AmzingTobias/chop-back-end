@@ -37,3 +37,38 @@ export const createNewSupportTicket = (
     );
   });
 };
+
+type TTicketInfoEntry = {
+  createdOn: Date;
+  closedOn: Date;
+  title: string;
+};
+/**
+ * Get all tickets for a customer
+ * @param customerId The id of the customer
+ * @returns A list of ticket information
+ */
+export const getAllTicketsForCustomer = (
+  customerId: number
+): Promise<TTicketInfoEntry[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT 
+      created_on AS "createdOn",
+      closed_on AS "closedOn",
+      title
+    FROM support_tickets
+    WHERE customer_id = $1
+    `,
+      [customerId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};
