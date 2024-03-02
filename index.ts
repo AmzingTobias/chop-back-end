@@ -24,6 +24,7 @@ import { TAccountAuth } from "./security/security";
 import { EResponseStatusCodes } from "./common/response-types";
 import discountRouter from "./routes/v1/discounts.routes";
 import analyticsRouter from "./routes/v1/analytics.routes";
+import supportRouter from "./routes/v1/support.routes";
 
 // Swagger Docs
 const swaggerSpecv1 = swaggerJSDoc({
@@ -121,6 +122,8 @@ app.use("/v1/product-types", productTypeRouter);
 app.use("/v1/brands", brandRouter);
 app.use("/v1/images", imageRouter);
 app.use("/v1/orders", orderRouter);
+
+app.use("/v1/support", supportRouter);
 
 // Docs
 app.use(
