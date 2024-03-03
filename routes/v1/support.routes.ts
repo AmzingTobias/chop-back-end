@@ -90,12 +90,24 @@ supportRouter.post("/", verifyToken, (req, res) => {
  *           items:
  *             type: object
  *             properties:
+ *              id:
+ *                type: number
+ *                description: The id of the ticket
  *              createdOn:
  *                type: Date
  *                description: The date the ticket was created
  *              closedOn:
  *                type: Date | null
  *                description: The date the ticket was closed or null
+ *              mostRecentAuthorId:
+ *                type: number | null
+ *                description: The id of the account that made the most recent comment, or null
+ *              lastUpdate:
+ *                type: Date | null
+ *                description: The date the ticket last had a comment attached to it
+ *              firstComment:
+ *                type: string | null
+ *                description: The first comment that was attached to the ticket
  *              title:
  *                type: string
  *                description: The title of the ticket
