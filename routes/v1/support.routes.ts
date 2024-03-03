@@ -285,7 +285,7 @@ supportRouter.post("/:ticketId/close", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /support/{ticketId}/comment:
+ * /support/{ticketId}/comments:
  *   post:
  *     tags: [Support]
  *     summary: Comment on an open ticket
@@ -312,7 +312,7 @@ supportRouter.post("/:ticketId/close", verifyToken, (req, res) => {
  *       500:
  *          description: Internal server error
  */
-supportRouter.post("/:ticketId/comment", verifyToken, (req, res) => {
+supportRouter.post("/:ticketId/comments", verifyToken, (req, res) => {
   if (
     req.user &&
     (req.user.accountType === EAccountTypes.customer ||

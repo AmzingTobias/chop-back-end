@@ -173,7 +173,7 @@ export const addCommentToTicket = (
       try {
         // Check the ticket is closed before commenting on it
         client.query(
-          "SELECT id FROM support_tickets WHERE id = $1 AND closed_on = null",
+          "SELECT id FROM support_tickets WHERE id = $1 AND closed_on IS NULL",
           [ticketId],
           (err, res) => {
             if (err) {
@@ -183,7 +183,7 @@ export const addCommentToTicket = (
               if (res.rowCount > 0) {
                 client.query(
                   `
-              INSERT INTO support_tickets_comments(ticket_id, author_id, comment) VALUES ($1, $2, $3)
+              INSERT INTO support_ticket_comments(ticket_id, author_id, comment) VALUES ($1, $2, $3)
               `,
                   [ticketId, accountId, comment],
                   (err: ICustomError, res) => {
