@@ -3,10 +3,12 @@ import { EAccountTypes, verifyToken } from "../../security/security";
 import { EResponseStatusCodes } from "../../common/response-types";
 import {
   addCommentToTicket,
+  assignSupportAccountToTicket,
   createNewSupportTicket,
   getAllCommentsForTicket,
   getAllTicketsForCustomer,
   markTicketAsClosed,
+  unassignSelfFromTicket,
 } from "../../models/support.models";
 import { EDatabaseResponses } from "../../data/data";
 
@@ -269,7 +271,7 @@ supportRouter.post("/:ticketId/comment", verifyToken, (req, res) => {
 
 /**
  * @swagger
- * /support:
+ * /{ticketId}/comments:
  *   get:
  *     tags: [Support]
  *     summary: Get all comments associated with a ticket
@@ -329,6 +331,134 @@ supportRouter.get("/:ticketId/comments", verifyToken, (req, res) => {
         console.error(err);
         res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
       });
+  } else {
+    return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+  }
+});
+
+/**
+ * @swagger
+ * /{ticketId}/assign:
+ *   put:
+ *     tags: [Support]
+ *     summary: Assign a support account to a ticket
+ *     parameters:
+ *       - in: params
+ *         name: ticketId
+ *         required: true
+ *         description: The id of the ticket
+ *         schema:
+ *           type: number
+ *       - in: body
+ *         name: supportAccountId
+ *         required: false
+ *         description: The id of the support account
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: Account assigned to ticket
+ *       400:
+ *          description: Fields missing in request, ticket doesn't exist, or support account doesn't exist
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+supportRouter.put("/:ticketId/assign", verifyToken, (req, res) => {
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.support ||
+      req.user.accountType === EAccountTypes.admin)
+  ) {
+    const ticketId = Number(req.params["ticketId"]);
+    const supportAccountId =
+      req.user.accountType === EAccountTypes.support
+        ? req.user.accountTypeId
+        : Number(req.body["supportAccountId"]);
+    if (Number.isNaN(supportAccountId) || Number.isNaN(ticketId)) {
+      return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+    }
+    assignSupportAccountToTicket(ticketId, supportAccountId)
+      .then((databaseResponse) => {
+        switch (databaseResponse) {
+          case EDatabaseResponses.OK:
+            return res.sendStatus(200);
+          case EDatabaseResponses.DOES_NOT_EXIST:
+            return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+          case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
+            return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+          default:
+            return res.sendStatus(
+              EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+            );
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  } else {
+    return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+  }
+});
+
+/**
+ * @swagger
+ * /{ticketId}/assign:
+ *   delete:
+ *     tags: [Support]
+ *     summary: Unassign a support account from a ticket
+ *     parameters:
+ *       - in: params
+ *         name: ticketId
+ *         required: true
+ *         description: The id of the ticket
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: Unassigned account from ticket
+ *       400:
+ *          description: Fields missing in request, ticket doesn't exist
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+supportRouter.delete("/:ticketId/assign", verifyToken, (req, res) => {
+  const ticketId = Number(req.params["ticketId"]);
+  if (Number.isNaN(ticketId)) {
+    return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+  }
+  if (req.user && req.user.accountType === EAccountTypes.admin) {
+    assignSupportAccountToTicket(ticketId, null).then((databaseResponse) => {
+      switch (databaseResponse) {
+        case EDatabaseResponses.OK:
+          return res.sendStatus(200);
+        case EDatabaseResponses.DOES_NOT_EXIST:
+          return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+        default:
+          return res.sendStatus(
+            EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+          );
+      }
+    });
+  } else if (req.user && req.user.accountType === EAccountTypes.support) {
+    unassignSelfFromTicket(ticketId, req.user.accountTypeId).then(
+      (databaseResponse) => {
+        switch (databaseResponse) {
+          case EDatabaseResponses.OK:
+            return res.sendStatus(200);
+          case EDatabaseResponses.DOES_NOT_EXIST:
+            return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+          default:
+            return res.sendStatus(
+              EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+            );
+        }
+      }
+    );
   } else {
     return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
   }

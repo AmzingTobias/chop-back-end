@@ -214,3 +214,73 @@ export const getAllCommentsForTicket = (
     );
   });
 };
+
+/**
+ * Assign a support account to a ticket
+ * @param ticketId The id of the ticket
+ * @param supportAccountId The id of the support account
+ * @returns EDatabaseResponses.OK if the support account id is assigned,
+ * EDatabaseResponses.FOREIGN_KEY_VIOLATION if the support account id does not exist,
+ * EDatabaseResponses.DOES_NOT_EXIST if the ticket does not exist
+ */
+export const assignSupportAccountToTicket = (
+  ticketId: number,
+  supportAccountId: number | null
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    UPDATE support_tickets SET support_id = $1 WHERE id = $2
+    `,
+      [supportAccountId, ticketId],
+      (err: ICustomError, res) => {
+        if (err) {
+          if (err.code === FOREIGN_KEY_VIOLATION) {
+            resolve(EDatabaseResponses.FOREIGN_KEY_VIOLATION);
+          } else {
+            reject(err);
+          }
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Unassign a support account from a ticket
+ * @param ticketId The id of the ticket
+ * @param supportAccountId The id of the support account to unassign from the ticket
+ * @returns EDatabaseResponses.OK if the ticket is unassigned from the support account,
+ * EDatabaseResponses.DOES_NOT_EXIST if the ticket does not exist, or the support
+ * account is not assigned to the ticket
+ */
+export const unassignSelfFromTicket = (
+  ticketId: number,
+  supportAccountId: number
+): Promise<EDatabaseResponses> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    UPDATE support_tickets SET support_id = null WHERE id = $1 AND support_id = $2
+    `,
+      [ticketId, supportAccountId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(
+            res.rowCount > 0
+              ? EDatabaseResponses.OK
+              : EDatabaseResponses.DOES_NOT_EXIST
+          );
+        }
+      }
+    );
+  });
+};
