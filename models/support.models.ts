@@ -168,3 +168,49 @@ export const addCommentToTicket = (
     }
   });
 };
+
+type TTicketCommentEntry = {
+  id: number;
+  authorId: number;
+  createdOn: Date;
+  comment: string;
+};
+
+/**
+ * Get all the comments associated with a ticket
+ * @param ticketId The id of the ticket
+ * @param customerId The id of the customer or undefined
+ * @returns A list of comments for a ticket
+ */
+export const getAllCommentsForTicket = (
+  ticketId: number,
+  customerId?: number
+): Promise<TTicketCommentEntry[]> => {
+  return new Promise((resolve, reject) => {
+    const parameters =
+      customerId === undefined ? [ticketId] : [ticketId, customerId];
+    pool.query(
+      `  
+    SELECT
+      support_ticket_comments.id,
+      support_ticket_comments.author_id AS "authorId",
+      support_ticket_comments.created_on AS "createdOn",
+      support_ticket_comments.comment
+    FROM support_ticket_comments
+    LEFT JOIN support_ticket ON support_ticket_comments.ticket_id = support_ticket.id
+    WHERE support_ticket_comments.ticket_id = $1 ${
+      customerId === undefined ? "" : "AND support_ticket.customer_id = $2"
+    }
+    ORDER BY support_ticket_comments.created_on DESC
+    `,
+      parameters,
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};

@@ -4,6 +4,7 @@ import { EResponseStatusCodes } from "../../common/response-types";
 import {
   addCommentToTicket,
   createNewSupportTicket,
+  getAllCommentsForTicket,
   getAllTicketsForCustomer,
   markTicketAsClosed,
 } from "../../models/support.models";
@@ -264,6 +265,73 @@ supportRouter.post("/:ticketId/comment", verifyToken, (req, res) => {
     }
   }
   return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+});
+
+/**
+ * @swagger
+ * /support:
+ *   get:
+ *     tags: [Support]
+ *     summary: Get all comments associated with a ticket
+ *     parameters:
+ *       - in: params
+ *         name: ticketId
+ *         required: true
+ *         description: The id of the ticket
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: A list of comments associated to the ticket
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *              id:
+ *                type: number
+ *                description: The id of the comment
+ *              authorId:
+ *                type: number
+ *                description: The id of the account that commented on the ticket
+ *              createdOn:
+ *                type: Date
+ *                description: The datetime stamp the comment was created
+ *              comment:
+ *                type: string
+ *                description: The details of the comment
+ *       400:
+ *          description: Fields missing in request
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+supportRouter.get("/:ticketId/comments", verifyToken, (req, res) => {
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.customer ||
+      req.user.accountType === EAccountTypes.admin ||
+      req.user.accountType === EAccountTypes.support)
+  ) {
+    const customerId =
+      req.user.accountType === EAccountTypes.customer
+        ? req.user.accountTypeId
+        : undefined;
+    const { ticketId } = req.params;
+    const ticketIdAsNumber = Number(ticketId);
+    if (Number.isNaN(ticketIdAsNumber)) {
+      return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+    }
+    getAllCommentsForTicket(ticketIdAsNumber, customerId)
+      .then((comments) => res.json(comments))
+      .catch((err) => {
+        console.error(err);
+        res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  } else {
+    return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+  }
 });
 
 export default supportRouter;
