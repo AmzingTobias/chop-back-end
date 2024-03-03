@@ -58,7 +58,7 @@ export const getAllTicketsForCustomer = (
   return new Promise((resolve, reject) => {
     pool.query(
       `
-    SELECT
+    SELECT DISTINCT
       support_tickets.id,
       support_tickets.created_on AS "createdOn",
       support_tickets.closed_on AS "closedOn",
@@ -77,6 +77,48 @@ export const getAllTicketsForCustomer = (
           reject(err);
         } else {
           resolve(res.rows);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get a specific ticket with an Id
+ * @param ticketId The id of the ticket
+ * @param customerId The id of the customer for auth check
+ * @returns A TTicketInfoEntry if the ticket exists, or null if not
+ */
+export const getTicketWithId = (
+  ticketId: number,
+  customerId?: number
+): Promise<TTicketInfoEntry | null> => {
+  return new Promise((resolve, reject) => {
+    const parameters =
+      customerId === undefined ? [ticketId] : [ticketId, customerId];
+    pool.query(
+      `
+    SELECT DISTINCT
+      support_tickets.id,
+      support_tickets.created_on AS "createdOn",
+      support_tickets.closed_on AS "closedOn",
+      (SELECT author_id FROM support_ticket_comments WHERE ticket_id = support_tickets.id ORDER BY created_on DESC LIMIT 1) AS "mostRecentAuthorId",
+      (SELECT support_ticket_comments.created_on FROM support_ticket_comments WHERE ticket_id = support_tickets.id ORDER BY created_on DESC LIMIT 1) AS "lastUpdate",
+      (SELECT support_ticket_comments.comment FROM support_ticket_comments WHERE ticket_id = support_tickets.id ORDER BY created_on LIMIT 1) AS "firstComment",
+      support_tickets.title
+    FROM support_tickets
+    LEFT JOIN support_ticket_comments on support_tickets.id = support_ticket_comments.ticket_id
+    WHERE support_tickets.id = $1 ${
+      customerId === undefined ? "" : "AND customer_id = $2"
+    }
+    ORDER BY "lastUpdate" DESC
+    `,
+      parameters,
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rowCount > 0 ? res.rows[0] : null);
         }
       }
     );
@@ -207,9 +249,9 @@ export const getAllCommentsForTicket = (
       support_ticket_comments.created_on AS "createdOn",
       support_ticket_comments.comment
     FROM support_ticket_comments
-    LEFT JOIN support_ticket ON support_ticket_comments.ticket_id = support_ticket.id
+    LEFT JOIN support_tickets ON support_ticket_comments.ticket_id = support_tickets.id
     WHERE support_ticket_comments.ticket_id = $1 ${
-      customerId === undefined ? "" : "AND support_ticket.customer_id = $2"
+      customerId === undefined ? "" : "AND support_tickets.customer_id = $2"
     }
     ORDER BY support_ticket_comments.created_on DESC
     `,

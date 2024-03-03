@@ -7,6 +7,7 @@ import {
   createNewSupportTicket,
   getAllCommentsForTicket,
   getAllTicketsForCustomer,
+  getTicketWithId,
   markTicketAsClosed,
   unassignSelfFromTicket,
 } from "../../models/support.models";
@@ -145,6 +146,78 @@ supportRouter.get("/", verifyToken, (req, res) => {
       });
   }
 
+  return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+});
+
+/**
+ * @swagger
+ * /support:
+ *   get:
+ *     tags: [Support]
+ *     summary: Get a ticket with an Id
+ *     parameters:
+ *       - in: query
+ *         name: ticketId
+ *         required: true
+ *         description: The id of the ticket
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: The ticket info or null
+ *         schema:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: number
+ *               description: The id of the ticket
+ *             createdOn:
+ *               type: Date
+ *               description: The date the ticket was created
+ *             closedOn:
+ *               type: Date | null
+ *               description: The date the ticket was closed or null
+ *             mostRecentAuthorId:
+ *               type: number | null
+ *               description: The id of the account that made the most recent comment, or null
+ *             lastUpdate:
+ *               type: Date | null
+ *               description: The date the ticket last had a comment attached to it
+ *             firstComment:
+ *               type: string | null
+ *               description: The first comment that was attached to the ticket
+ *             title:
+ *               type: string
+ *               description: The title of the ticket
+ *       400:
+ *          description: Fields missing in request
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+supportRouter.get("/:ticketId", verifyToken, (req, res) => {
+  const ticketId = Number(req.params["ticketId"]);
+  if (Number.isNaN(ticketId)) {
+    return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+  }
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.customer ||
+      req.user.accountType === EAccountTypes.support ||
+      req.user.accountType === EAccountTypes.admin)
+  ) {
+    const customerId =
+      req.user.accountType === EAccountTypes.customer
+        ? req.user.accountTypeId
+        : undefined;
+    return getTicketWithId(ticketId, customerId)
+      .then((ticket) => res.json({ ticket: ticket }))
+      .catch((err) => {
+        console.error(err);
+        return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  }
   return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
 });
 
