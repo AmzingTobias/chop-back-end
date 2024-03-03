@@ -39,8 +39,12 @@ export const createNewSupportTicket = (
 };
 
 type TTicketInfoEntry = {
+  id: number;
   createdOn: Date;
-  closedOn: Date;
+  closedOn: Date | null;
+  mostRecentAuthorId: number | null;
+  lastUpdate: Date | null;
+  firstComment: string | null;
   title: string;
 };
 /**
@@ -54,12 +58,18 @@ export const getAllTicketsForCustomer = (
   return new Promise((resolve, reject) => {
     pool.query(
       `
-    SELECT 
-      created_on AS "createdOn",
-      closed_on AS "closedOn",
-      title
+    SELECT
+      support_tickets.id,
+      support_tickets.created_on AS "createdOn",
+      support_tickets.closed_on AS "closedOn",
+      (SELECT author_id FROM support_ticket_comments WHERE ticket_id = support_tickets.id ORDER BY created_on DESC LIMIT 1) AS "mostRecentAuthorId",
+      (SELECT support_ticket_comments.created_on FROM support_ticket_comments WHERE ticket_id = support_tickets.id ORDER BY created_on DESC LIMIT 1) AS "lastUpdate",
+      (SELECT support_ticket_comments.comment FROM support_ticket_comments WHERE ticket_id = support_tickets.id ORDER BY created_on LIMIT 1) AS "firstComment",
+      support_tickets.title
     FROM support_tickets
+    LEFT JOIN support_ticket_comments on support_tickets.id = support_ticket_comments.ticket_id
     WHERE customer_id = $1
+    ORDER BY "lastUpdate" DESC
     `,
       [customerId],
       (err, res) => {
