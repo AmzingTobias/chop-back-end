@@ -134,7 +134,7 @@ export const markTicketAsClosed = (
       customerId === undefined ? [ticketId] : [ticketId, customerId];
     pool.query(
       `
-      UPDATE support_tickets SET closed_on = CURRENT_DATE
+      UPDATE support_tickets SET closed_on = CURRENT_TIMESTAMP(0)
       WHERE id = $1 ${customerId === undefined ? "" : "AND customer_id = $2"}
       `,
       parameters,
