@@ -6,6 +6,7 @@ import {
   assignSupportAccountToTicket,
   createNewSupportTicket,
   getAllCommentsForTicket,
+  getAllTickets,
   getAllTicketsForCustomer,
   getTicketWithId,
   markTicketAsClosed,
@@ -127,7 +128,14 @@ supportRouter.get("/", verifyToken, (req, res) => {
   ) {
     const { customerId } = req.query;
     if (Number.isNaN(Number(customerId))) {
-      return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+      return getAllTickets()
+        .then((tickets) => res.json(tickets))
+        .catch((err) => {
+          console.error(err);
+          return res.sendStatus(
+            EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
+          );
+        });
     }
     return getAllTicketsForCustomer(Number(customerId))
       .then((tickets) => res.json(tickets))

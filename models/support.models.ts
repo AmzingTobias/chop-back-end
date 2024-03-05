@@ -38,7 +38,7 @@ export const createNewSupportTicket = (
   });
 };
 
-type TTicketInfoEntry = {
+interface ITicketInfoEntry {
   id: number;
   createdOn: Date;
   closedOn: Date | null;
@@ -46,7 +46,44 @@ type TTicketInfoEntry = {
   lastUpdate: Date | null;
   firstComment: string | null;
   title: string;
+}
+
+interface ITicketInfoEntryStaff extends ITicketInfoEntry {
+  assignedSupportId: number | null;
+}
+
+/**
+ * Get all support tickets that exist
+ * @returns A list of ITicketInfoEntryStaff
+ */
+export const getAllTickets = (): Promise<ITicketInfoEntryStaff[]> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT DISTINCT
+      support_tickets.id,
+      support_tickets.created_on AS "createdOn",
+      support_tickets.closed_on AS "closedOn",
+      support_tickets.support_id AS "assignedSupportId",
+      (SELECT author_id FROM support_ticket_comments WHERE ticket_id = support_tickets.id ORDER BY created_on DESC LIMIT 1) AS "mostRecentAuthorId",
+      (SELECT support_ticket_comments.created_on FROM support_ticket_comments WHERE ticket_id = support_tickets.id ORDER BY created_on DESC LIMIT 1) AS "lastUpdate",
+      (SELECT support_ticket_comments.comment FROM support_ticket_comments WHERE ticket_id = support_tickets.id ORDER BY created_on LIMIT 1) AS "firstComment",
+      support_tickets.title
+    FROM support_tickets
+    LEFT JOIN support_ticket_comments on support_tickets.id = support_ticket_comments.ticket_id
+    ORDER BY "lastUpdate" DESC
+    `,
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
 };
+
 /**
  * Get all tickets for a customer
  * @param customerId The id of the customer
@@ -54,7 +91,7 @@ type TTicketInfoEntry = {
  */
 export const getAllTicketsForCustomer = (
   customerId: number
-): Promise<TTicketInfoEntry[]> => {
+): Promise<ITicketInfoEntry[]> => {
   return new Promise((resolve, reject) => {
     pool.query(
       `
@@ -92,7 +129,7 @@ export const getAllTicketsForCustomer = (
 export const getTicketWithId = (
   ticketId: number,
   customerId?: number
-): Promise<TTicketInfoEntry | null> => {
+): Promise<ITicketInfoEntry | null> => {
   return new Promise((resolve, reject) => {
     const parameters =
       customerId === undefined ? [ticketId] : [ticketId, customerId];
