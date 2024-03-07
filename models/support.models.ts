@@ -452,6 +452,7 @@ export const getAllSupportStaffWithAssignedCount = (): Promise<
     FROM support_accounts
     LEFT JOIN support_tickets ON support_accounts.id = support_tickets.support_id
     LEFT JOIN accounts ON support_accounts.account_id = accounts.id
+    WHERE support_tickets.closed_on is NULL
     GROUP BY support_accounts.id, email
     `,
       (err, res) => {
@@ -459,6 +460,31 @@ export const getAllSupportStaffWithAssignedCount = (): Promise<
           reject(err);
         } else {
           resolve(res.rows);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get the customer that created
+ * @param ticketId The id of the ticket
+ * @returns The id of the customer or null if the ticket id is invalid
+ */
+export const getCustomerIdFromTicket = (
+  ticketId: number
+): Promise<number | null> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT customer_id FROM support_tickets WHERE id = $1
+    `,
+      [ticketId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rowCount > 0 ? res.rows[0].customer_id : null);
         }
       }
     );

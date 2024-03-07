@@ -10,6 +10,7 @@ import {
   getAllTickets,
   getAllTicketsForCustomer,
   getAssignedSupportStaffIdForTicket,
+  getCustomerIdFromTicket,
   getTicketWithId,
   markTicketAsClosed,
   unassignSelfFromTicket,
@@ -640,11 +641,58 @@ supportRouter.get("/:ticketId/assign", verifyToken, (req, res) => {
     (req.user.accountType === EAccountTypes.admin ||
       req.user.accountType === EAccountTypes.support)
   ) {
-    getAssignedSupportStaffIdForTicket(ticketId).then(
-      (assignedSupportStaff) => {
-        res.json({ assignedSupportStaff: assignedSupportStaff });
-      }
-    );
+    getAssignedSupportStaffIdForTicket(ticketId)
+      .then((assignedSupportStaff) =>
+        res.json({ assignedSupportStaff: assignedSupportStaff })
+      )
+      .catch((err) => {
+        console.error(err);
+        return res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  } else {
+    return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+  }
+});
+
+/**
+ * @swagger
+ * /support/{ticketId}/customer:
+ *   get:
+ *     tags: [Support]
+ *     summary: Get the id of the customer who created the ticket
+ *     responses:
+ *       200:
+ *         description: The account assigned to the ticket or null
+ *         schema:
+ *           type: object
+ *           properties:
+ *            customerId:
+ *              type: number | null
+ *              description: The id of the customer
+ *       400:
+ *          description: Ticket id invalid in request
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+supportRouter.get("/:ticketId/customer", verifyToken, (req, res) => {
+  const ticketId = Number(req.params["ticketId"]);
+  if (Number.isNaN(ticketId)) {
+    return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+  }
+
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.admin ||
+      req.user.accountType === EAccountTypes.support)
+  ) {
+    getCustomerIdFromTicket(ticketId)
+      .then((customerId) => res.json({ customerId }))
+      .catch((err) => {
+        console.error(err);
+        res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
   } else {
     return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
   }
