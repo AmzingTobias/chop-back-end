@@ -373,3 +373,71 @@ export const unassignSelfFromTicket = (
     );
   });
 };
+
+type TSupportAccount = {
+  supportId: number;
+  email: string;
+};
+
+/**
+ * Get the id of the assigned support staff for a ticket
+ * @param ticketId The ticket id
+ * @returns A TSupportAccount if there's a support staff assigned, null otherwise
+ */
+export const getAssignedSupportStaffIdForTicket = (
+  ticketId: number
+): Promise<TSupportAccount | null> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+      SELECT support_id AS "supportId", email
+      FROM support_tickets
+          LEFT JOIN support_accounts on support_tickets.support_id = support_accounts.id
+          LEFT JOIN accounts ON support_accounts.account_id = accounts.id
+      WHERE support_tickets.id = $1 AND support_id IS NOT NULL
+    `,
+      [ticketId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rowCount > 0 ? res.rows[0] : null);
+        }
+      }
+    );
+  });
+};
+
+interface ISupportStaffWithAssigned extends TSupportAccount {
+  ticketCount: number;
+}
+
+/**
+ * Get all the support staff available for being assigned to a ticket
+ * @returns A list of support staff with a count for the number of tickets they're already assigned to
+ */
+export const getAllSupportStaffWithAssignedCount = (): Promise<
+  ISupportStaffWithAssigned[]
+> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT 
+      support_accounts.id AS "supportId",
+      email,
+      COUNT(support_tickets.id) AS "ticketCount"
+    FROM support_accounts
+    LEFT JOIN support_tickets ON support_accounts.id = support_tickets.support_id
+    LEFT JOIN accounts ON support_accounts.account_id = accounts.id
+    GROUP BY support_accounts.id, email
+    `,
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
+      }
+    );
+  });
+};

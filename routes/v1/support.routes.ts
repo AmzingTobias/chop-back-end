@@ -6,8 +6,10 @@ import {
   assignSupportAccountToTicket,
   createNewSupportTicket,
   getAllCommentsForTicket,
+  getAllSupportStaffWithAssignedCount,
   getAllTickets,
   getAllTicketsForCustomer,
+  getAssignedSupportStaffIdForTicket,
   getTicketWithId,
   markTicketAsClosed,
   unassignSelfFromTicket,
@@ -155,6 +157,49 @@ supportRouter.get("/", verifyToken, (req, res) => {
   }
 
   return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+});
+
+/**
+ * @swagger
+ * /support/accounts:
+ *   get:
+ *     tags: [Support, Accounts]
+ *     summary: Get the accounts of the support staff available
+ *     responses:
+ *       200:
+ *         description: List of accounts available
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *              supportId:
+ *                type: number
+ *                description: The id of the support account
+ *              email:
+ *                type: string
+ *                description: The email of the support account
+ *              ticketCount:
+ *                type: number
+ *                description: The number of tickets the support staff is assigned to
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+supportRouter.get("/accounts", verifyToken, (req, res) => {
+  if (req.user && req.user.accountType === EAccountTypes.admin) {
+    return getAllSupportStaffWithAssignedCount()
+      .then((accounts) => {
+        res.json(accounts);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  } else {
+    return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+  }
 });
 
 /**
@@ -550,6 +595,51 @@ supportRouter.delete("/:ticketId/assign", verifyToken, (req, res) => {
               EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE
             );
         }
+      }
+    );
+  } else {
+    return res.sendStatus(EResponseStatusCodes.UNAUTHORIZED_CODE);
+  }
+});
+
+/**
+ * @swagger
+ * /support/{ticketId}/assign:
+ *   get:
+ *     tags: [Support]
+ *     summary: Get the support account assigned to a ticket
+ *     responses:
+ *       200:
+ *         description: The account assigned to the ticket or null
+ *         schema:
+ *           type: object | null
+ *           properties:
+ *            supportId:
+ *              type: number
+ *              description: The id of the support account
+ *            email:
+ *              type: string
+ *              description: The email of the support account
+ *       400:
+ *          description: Ticket id invalid in request
+ *       401:
+ *          description: Account lacks required permissions
+ *       500:
+ *          description: Internal server error
+ */
+supportRouter.get("/:ticketId/assign", verifyToken, (req, res) => {
+  const ticketId = Number(req.params["ticketId"]);
+  if (Number.isNaN(ticketId)) {
+    return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
+  }
+  if (
+    req.user &&
+    (req.user.accountType === EAccountTypes.admin ||
+      req.user.accountType === EAccountTypes.support)
+  ) {
+    getAssignedSupportStaffIdForTicket(ticketId).then(
+      (assignedSupportStaff) => {
+        res.json({ assignedSupportStaff: assignedSupportStaff });
       }
     );
   } else {
