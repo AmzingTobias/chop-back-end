@@ -434,6 +434,9 @@ supportRouter.post("/:ticketId/comments", verifyToken, (req, res) => {
  *              authorId:
  *                type: number
  *                description: The id of the account that commented on the ticket
+ *              authorAccountType:
+ *                type: number
+ *                description: The account type of the author of the comment
  *              createdOn:
  *                type: Date
  *                description: The datetime stamp the comment was created

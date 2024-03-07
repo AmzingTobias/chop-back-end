@@ -1,5 +1,6 @@
 import { FOREIGN_KEY_VIOLATION } from "../common/postgresql-error-codes";
 import pool, { EDatabaseResponses, ICustomError } from "../data/data";
+import { EAccountTypes } from "../security/security";
 
 /**
  * Create a new support ticket
@@ -261,6 +262,7 @@ export const addCommentToTicket = (
 type TTicketCommentEntry = {
   id: number;
   authorId: number;
+  authorAccountType: EAccountTypes;
   createdOn: Date;
   comment: string;
 };
@@ -283,6 +285,27 @@ export const getAllCommentsForTicket = (
     SELECT
       support_ticket_comments.id,
       support_ticket_comments.author_id AS "authorId",
+      (SELECT
+        CASE
+            WHEN customer_accounts.account_id IS NOT NULL THEN 0
+            WHEN sale_accounts.account_id IS NOT NULL THEN 1
+            WHEN support_accounts.account_id IS NOT NULL THEN 2
+            WHEN admin_accounts.account_id IS NOT NULL THEN 3
+            WHEN warehouse_accounts.account_id IS NOT NULL THEN 4
+        END AS assigned_table
+      FROM
+          accounts
+      LEFT JOIN
+          admin_accounts ON accounts.id = admin_accounts.account_id
+      LEFT JOIN
+          customer_accounts ON accounts.id = customer_accounts.account_id
+      LEFT JOIN
+          support_accounts ON accounts.id = support_accounts.account_id
+      LEFT JOIN
+          warehouse_accounts ON accounts.id = warehouse_accounts.account_id
+      LEFT JOIN
+          sale_accounts ON accounts.id = sale_accounts.account_id
+      WHERE accounts.id = support_ticket_comments.author_id) AS "authorAccountType",
       support_ticket_comments.created_on AS "createdOn",
       support_ticket_comments.comment
     FROM support_ticket_comments
