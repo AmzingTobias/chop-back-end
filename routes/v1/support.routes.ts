@@ -131,7 +131,11 @@ supportRouter.get("/", verifyToken, (req, res) => {
   ) {
     const { customerId } = req.query;
     if (Number.isNaN(Number(customerId))) {
-      return getAllTickets()
+      return getAllTickets(
+        req.user.accountType === EAccountTypes.admin
+          ? undefined
+          : req.user.accountTypeId
+      )
         .then((tickets) => res.json(tickets))
         .catch((err) => {
           console.error(err);

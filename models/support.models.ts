@@ -57,8 +57,11 @@ interface ITicketInfoEntryStaff extends ITicketInfoEntry {
  * Get all support tickets that exist
  * @returns A list of ITicketInfoEntryStaff
  */
-export const getAllTickets = (): Promise<ITicketInfoEntryStaff[]> => {
+export const getAllTickets = (
+  supportStaffId?: number
+): Promise<ITicketInfoEntryStaff[]> => {
   return new Promise((resolve, reject) => {
+    const parameters = supportStaffId === undefined ? [] : [supportStaffId];
     pool.query(
       `
     SELECT DISTINCT
@@ -72,8 +75,14 @@ export const getAllTickets = (): Promise<ITicketInfoEntryStaff[]> => {
       support_tickets.title
     FROM support_tickets
     LEFT JOIN support_ticket_comments on support_tickets.id = support_ticket_comments.ticket_id
+    ${
+      supportStaffId === undefined
+        ? ""
+        : "WHERE support_tickets.support_id is NULL OR support_tickets.support_id = $1"
+    }
     ORDER BY "lastUpdate" DESC
     `,
+      parameters,
       (err, res) => {
         if (err) {
           reject(err);
