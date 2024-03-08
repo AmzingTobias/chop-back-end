@@ -231,6 +231,13 @@ orderRouter.get("/status", (req, res) => {
  *   get:
  *     tags: [Orders]
  *     summary: Get all possible orders that a customer has placed
+ *     parameters:
+ *       - in: query
+ *         name: customerId
+ *         required: false
+ *         description: The id of the customer to get orders for
+ *         schema:
+ *           type: number
  *     responses:
  *       200:
  *         description: A list of all orders a customer has placed
@@ -260,6 +267,22 @@ orderRouter.get("/status", (req, res) => {
  *          description: Internal server error
  */
 orderRouter.get("/", verifyToken, (req, res) => {
+  const customerIdFromQuery = Number(req.query["customerId"]);
+  if (
+    !Number.isNaN(customerIdFromQuery) &&
+    req.user &&
+    (req.user.accountType === EAccountTypes.admin ||
+      req.user?.accountType === EAccountTypes.support)
+  ) {
+    return getOrdersForCustomer(customerIdFromQuery)
+      .then((orders) => {
+        res.json(orders);
+      })
+      .catch((_) => {
+        res.sendStatus(EResponseStatusCodes.INTERNAL_SERVER_ERROR_CODE);
+      });
+  }
+
   if (
     req.user &&
     (req.user.accountType === EAccountTypes.admin ||
