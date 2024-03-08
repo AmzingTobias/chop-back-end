@@ -499,3 +499,26 @@ export const getCustomerIdFromTicket = (
     );
   });
 };
+
+export const getTicketInfoForNotification = (
+  ticketId: number
+): Promise<{ email: string; title: string } | null> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT email, title 
+      FROM support_tickets 
+      LEFT JOIN customer_accounts ON support_tickets.customer_id = customer_accounts.id 
+      LEFT JOIN accounts ON customer_accounts.account_id = accounts.id 
+    WHERE support_tickets.id = $1
+    `,
+      [ticketId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(res.rowCount > 0 ? res.rows[0] : null);
+      }
+    );
+  });
+};

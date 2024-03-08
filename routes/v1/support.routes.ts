@@ -11,11 +11,13 @@ import {
   getAllTicketsForCustomer,
   getAssignedSupportStaffIdForTicket,
   getCustomerIdFromTicket,
+  getTicketInfoForNotification,
   getTicketWithId,
   markTicketAsClosed,
   unassignSelfFromTicket,
 } from "../../models/support.models";
 import { EDatabaseResponses } from "../../data/data";
+import { sendTicketUpdateEmail } from "../../email/EmailClient";
 
 export const supportRouter = Router();
 
@@ -379,18 +381,29 @@ supportRouter.post("/:ticketId/comments", verifyToken, (req, res) => {
   ) {
     const accountId = req.user.user_id;
     const { comment } = req.body;
-    const { ticketId } = req.params;
+    const ticketId = Number(req.params["ticketId"]);
     if (
       typeof comment !== "string" ||
       comment.trim().length === 0 ||
-      Number.isNaN(Number(ticketId))
+      Number.isNaN(ticketId)
     ) {
       return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
     } else {
-      return addCommentToTicket(Number(ticketId), accountId, comment.trim())
+      return addCommentToTicket(ticketId, accountId, comment.trim())
         .then((databaseResponse) => {
           switch (databaseResponse) {
             case EDatabaseResponses.OK:
+              if (req.user && req.user.accountType !== EAccountTypes.customer) {
+                getTicketInfoForNotification(ticketId).then((emailInfo) => {
+                  if (emailInfo !== null) {
+                    sendTicketUpdateEmail(
+                      emailInfo.email,
+                      ticketId,
+                      emailInfo.title
+                    );
+                  }
+                });
+              }
               return res.sendStatus(200);
             case EDatabaseResponses.FOREIGN_KEY_VIOLATION:
             case EDatabaseResponses.DOES_NOT_EXIST:
