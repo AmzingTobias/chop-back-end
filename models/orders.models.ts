@@ -1,5 +1,7 @@
 import { FOREIGN_KEY_VIOLATION } from "../common/postgresql-error-codes";
+import { sendOrderEmail } from "../controllers/order.controller";
 import pool, { EDatabaseResponses, ICustomError } from "../data/data";
+import { EOrderEmailTypes } from "../email/EmailClient";
 import { TDiscountCodeValidation } from "./discount.models";
 
 /**
@@ -279,6 +281,10 @@ export const placeOrder = (
               "DELETE FROM products_in_basket WHERE customer_id = $1",
               [customerId]
             );
+            sendOrderEmail(
+              baseOrderCreatedResponse.rows[0].id,
+              EOrderEmailTypes.PLACED
+            );
           }
         } else {
           transactionStatus = EOrderPlaceStatus.SHIPPING_ADDRESS_INVALID;
@@ -434,6 +440,31 @@ export const getDiscountsUsedForOrder = (
           reject(err);
         } else {
           resolve(res.rows);
+        }
+      }
+    );
+  });
+};
+
+/**
+ * Get the customer's id who placed an order
+ * @param orderId The id of the order
+ * @returns The id of the customer, or null if the order does not exist
+ */
+export const getCustomerIdForOrderId = (
+  orderId: number
+): Promise<number | null> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT customer_id AS "customerId" FROM orders WHERE id = $1
+    `,
+      [orderId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rowCount > 0 ? res.rows[0].customerId : null);
         }
       }
     );

@@ -242,3 +242,31 @@ export const getAllAccounts = (): Promise<TAccountDetailsEntry[]> => {
     );
   });
 };
+
+/**
+ * Get the email for a customer's account
+ * @param customerId The id of the customer
+ * @returns The email for the customer's account or null if the customer id is invalid
+ */
+export const getAccountEmailWithCustomerId = (
+  customerId: number
+): Promise<string | null> => {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+    SELECT 
+    email 
+    FROM customer_accounts 
+    LEFT JOIN accounts ON customer_accounts.account_id = accounts.id WHERE customer_accounts.id = $1;
+    `,
+      [customerId],
+      (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.rowCount > 0 ? res.rows[0].email : null);
+        }
+      }
+    );
+  });
+};

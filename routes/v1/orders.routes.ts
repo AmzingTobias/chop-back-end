@@ -22,6 +22,8 @@ import {
   validateDiscountCode,
 } from "../../models/discount.models";
 import { EDatabaseResponses } from "../../data/data";
+import { sendOrderEmail } from "../../controllers/order.controller";
+import { EOrderEmailTypes } from "../../email/EmailClient";
 
 export const orderRouter = Router();
 
@@ -586,6 +588,7 @@ orderRouter.post("/:orderId/status", verifyToken, (req, res) => {
       .then((databaseResponse) => {
         switch (databaseResponse) {
           case EDatabaseResponses.OK:
+            sendOrderEmail(Number(orderId), EOrderEmailTypes.STATUS_UPDATED);
             return res.sendStatus(200);
           case EDatabaseResponses.DOES_NOT_EXIST:
             return res.sendStatus(EResponseStatusCodes.BAD_REQUEST_CODE);
