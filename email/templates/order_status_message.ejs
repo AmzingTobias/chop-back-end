@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,800;1,800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Raleway:ital,wght@0,800;1,800&display=swap"
+      rel="stylesheet"
+    />
+    <title>Order Update</title>
+  </head>
+
+  <body style="margin: 0; padding: 0; background-color: #0a1828">
+    <div style="text-align: center">
+      <h1
+        onmouseover="this.style.opacity=0.8"
+        onmouseout="this.style.opacity=1;"
+      >
+        <a
+          style="
+            font-size: 4rem;
+            font-weight: 800;
+            color: #bfa181;
+            user-select: none;
+            font-family: 'Raleway', sans-serif;
+            text-decoration: none;
+          "
+          href="https://chop.tdmd.co.uk"
+          >chop</a
+        >
+      </h1>
+    </div>
+
+    <table
+      style="
+        width: 100%;
+        max-width: 600px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin: auto;
+        margin-top: 30px;
+        font-family: 'Inter', sans-serif;
+      "
+    >
+      <tr>
+        <td style="padding: 20px; text-align: center">
+          <div
+            style="
+              font-size: 18px;
+              color: #333;
+              margin-bottom: 15px;
+              font-weight: bold;
+            "
+          >
+            Your order has been <%= orderEmailType %>
+          </div>
+          <div style="font-size: 18px; color: #333; margin-bottom: 15px">
+            Order #<%= orderId %>: <%= orderStatus %>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <% for (let product of products){ %>
+            <div
+              style="
+                display: flex;
+                background-color: #0a1828;
+                color: #eee;
+                border-radius: 0.375rem; /* This corresponds to rounded-md */
+                flex-direction: row;
+                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
+                  0 1px 2px 0 rgba(0, 0, 0, 0.06); /* This is an approximation of shadow-md */
+              "
+            >
+              <img
+                width="150"
+                height="200"
+                style="
+                  border-top-right-radius: 0;
+                  border-bottom-left-radius: 0.375rem;
+                  border-top-left-radius: 0.375rem;
+                "
+                src="<%= product.image %>"
+                alt="Product demo"
+              />
+              <div
+                style="
+                  display: flex;
+                  padding: 1rem; /* p-2 */
+                  width: 100%;
+                  flex-grow: 1;
+                "
+              >
+                <h3
+                  style="
+                    font-size: 1.125rem; /* text-xl */
+                    font-size: 1rem; /* text-medium, assuming custom size, fallback to default if not found */
+                    flex-grow: 1;
+                    width: 100%;
+                    margin: 0;
+                    text-align: start;
+                  "
+                >
+                  <%= product.name %>
+                </h3>
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: flex-end;
+                    align-items: flex-end;
+                    min-width: fit-content;
+                  "
+                >
+                  <div
+                    style="
+                      display: flex;
+                      flex-direction: row;
+                      gap: 0.5rem; /* gap-2 */
+                      align-items: center;
+                    "
+                  >
+                    <small style="font-weight: 500; /* font-medium */"
+                      ><%= product.quantity %> x
+                    </small>
+                    <p
+                      style="
+                        font-size: 1.125rem; /* md:text-xl */
+                        font-size: 1rem; /* text-medium, assuming custom size, fallback to default if not found */
+                        margin: 0;
+                        font-weight: 600; /* font-semibold */
+                      "
+                    >
+                      £<%= product.price %>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <% } %>
+            <div
+              style="display: flex; flex-direction: column; align-items: start"
+            >
+              <p style="margin: 2px"><%= address.firstAddressLine %></p>
+              <% if (address.secondAddressLine !== "") { %>
+              <p><%= address.secondAddressLine %></p>
+              <% } %>
+              <p style="margin: 2px"><%= address.countryState %></p>
+              <p style="margin: 2px"><%= address.areaCode %></p>
+              <p style="margin: 2px"><%= address.countryName %></p>
+            </div>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              text-align: end;
+              align-items: flex-end;
+              width: 100%;
+              font-size: 1.125rem;
+              font-weight: 600;
+            "
+          >
+            <p style="margin: 0">Items: £<%= total.toFixed(2) %></p>
+            <% discountsUsed.forEach(function(code, index) { %>
+            <p
+              key="<%= index %>"
+              style="
+                font-weight: 300;
+                font-size: 0.875rem;
+                font-style: italic;
+                margin: 0;
+              "
+            >
+              Code: <%= code.code %>
+            </p>
+            <% }); %>
+            <p style="margin: 0">Delivery: £0.00</p>
+            <p style="margin: 0">Total paid: £<%= pricePaid.toFixed(2) %></p>
+          </div>
+
+          <a
+            style="
+              margin-top: 25px;
+              width: 250px;
+              color: #ffffff;
+              text-decoration: none;
+              background-color: #178582;
+              color: #fff;
+              padding: 10px 20px;
+              border-radius: 5px;
+              font-size: 16px;
+              display: inline-block;
+              transition: background-color 0.3s ease;
+            "
+            href="https://chop.tdmd.co.uk/orders"
+            >View order</a
+          >
+        </td>
+      </tr>
+    </table>
+    <div style="min-height: 50px"></div>
+  </body>
+</html>
