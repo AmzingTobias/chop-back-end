@@ -24,6 +24,7 @@ export const getPurchaseAmountPerDate = (
     FROM orders_with_products_view
     ${productId !== undefined ? "WHERE product_id = $1" : ""}
     GROUP BY orders_with_products_view.order_placed_on::date
+    ORDER BY "placedOn"
     `,
       parameters,
       (err, res) => {
