@@ -317,14 +317,17 @@ type TOrderStatus = {
  */
 export const getPossibleOrderStatuses = (): Promise<TOrderStatus[]> => {
   return new Promise((resolve, reject) => {
-    pool.query("SELECT id, status FROM order_statuses", (err, res) => {
-      if (err) {
-        console.error(err);
-        reject(err);
-      } else {
-        resolve(res.rows);
+    pool.query(
+      "SELECT id, status FROM order_statuses ORDER BY id",
+      (err, res) => {
+        if (err) {
+          console.error(err);
+          reject(err);
+        } else {
+          resolve(res.rows);
+        }
       }
-    });
+    );
   });
 };
 
